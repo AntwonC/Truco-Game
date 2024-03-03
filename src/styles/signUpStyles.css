@@ -2,9 +2,24 @@ body {
     background-color: grey;
 }
 
-#emailLogo {
+#userLogo {
     background-color: rgba(255, 255, 255, 0.55);
 }
-#emailInput {
-    background-color: white;
+
+#passwordLogo {
+    background-color: rgba(255, 255, 255, 0.55);
+}
+
+#confirmPasswordLogo {
+    background-color: rgba(255, 255, 255, 0.55);
+}
+
+.container-box {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.sign-up-button {
+    margin-top: 10px;
 }
