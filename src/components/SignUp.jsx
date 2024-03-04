@@ -12,6 +12,7 @@ const SignUp = () => {
     const [email, setEmail] = useState("");
 
     const [errors, setErrors] = useState("");
+    const [successMessage, setSuccessMessage] = useState("");
 
     const [signUpData, setSignUpData] = useState({
         signUpUser: '',
@@ -19,12 +20,26 @@ const SignUp = () => {
         signUpPasswordConfirm: '',
     });
 
+    const clearsAllInputs = () => {
+        console.log(`Attempting to clear all inputs....`);
+       // setSignUpInfo((prevState) => ({ ...prevState, [prevState]: ''}));
+          const cleanSlate = ({
+            signUpUser: '',
+            signUpPassword: '',
+            signUpPasswordConfirm: '',
+          });
+  
+          setErrors('');
+          
+          setSignUpData(cleanSlate);
+    }
+
     const handleChange = (evt) => {
         const { name, value } = evt.target;
 
         setSignUpData((prevState) => ({ ...prevState, [name]: value}));
 
-        console.log(signUpData);
+       // console.log(signUpData);
     };
 
     const signUpClicked = async () => {
@@ -39,7 +54,7 @@ const SignUp = () => {
         })
         .then((res) => {
             console.log(res);
-
+            
             if(res.status === 403) {
                 const jsonData = res.json();
 
@@ -48,14 +63,23 @@ const SignUp = () => {
                     console.log(signUpError);
                     if(signUpError === 'signUpUser') {
                         throw Error('Username too short, at least 5 characters');
+                    } else if(signUpError === 'signUpPassword') {
+                        throw Error('Password must be at least 5 characters or not blank.');
+                    } else if(signUpError === 'signUpPasswordConfirm') {
+                        throw Error('Confirm Password must be at least 5 characters or not blank.');
                     }
-                })
+                });
             } else if (res.status === 404) {
                 const jsonData = res.json();
-
+                
                 return jsonData.then((data) => {
+                    console.log(data);
                     throw Error(data.message);
-                })
+                });
+            } else if (res.status === 205) {
+                clearsAllInputs();
+                setSuccessMessage("Sign Up Successful");
+                
             }
         })
         .catch((err) => {
@@ -70,12 +94,16 @@ const SignUp = () => {
         <>
           <Bar />
 
-          {errors.length > 0 ? <div>{errors}</div> : <></>}
 
           <Container className="container-box">
-          <InputGroup size="sm">
+
+          {errors.length > 0 ? <div className="error-div">{errors}</div> : <></>}
+          {successMessage.length > 0 ? <div>{successMessage}</div> : <></>}
+
+          <InputGroup size="sm w-75 mw-75">
             <InputGroup.Text id="userLogo">U</InputGroup.Text>
             <Form.Control 
+                
                 name="signUpUser"
                 placeholder="Username"
                 aria-label="Username"
@@ -88,7 +116,7 @@ const SignUp = () => {
           </InputGroup>
           
           
-          <InputGroup size="sm">
+          <InputGroup size="sm w-75">
             <InputGroup.Text id="passwordLogo">P</InputGroup.Text>    
             <Form.Control
                 name="signUpPassword"
@@ -100,7 +128,7 @@ const SignUp = () => {
             />
           </InputGroup>
 
-          <InputGroup size="sm">
+          <InputGroup size="sm w-75">
             <InputGroup.Text id="confirmPasswordLogo">CP</InputGroup.Text>    
             <Form.Control
                 name="signUpPasswordConfirm"
@@ -112,8 +140,8 @@ const SignUp = () => {
             />
           </InputGroup>
 
+          <Button className="" onClick={signUpClicked} variant="secondary" size="sm w-75">Sign Up</Button>
           </Container> 
-          <Button className="sign-up-button" onClick={signUpClicked} variant="secondary" size="sm">Sign Up</Button>
         </>
     )
 }
