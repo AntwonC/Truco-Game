@@ -4,9 +4,11 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import App from './App.jsx'
 import SignUp from './components/SignUp.jsx';
 import Login from './components/Login.jsx';
+import Dashboard from './components/Dashboard.jsx';
 import './index.css'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './styles/signUpStyles.css';
+import './styles/dashboardStyles.css';
 
 const router = createBrowserRouter([
   {
@@ -17,6 +19,10 @@ const router = createBrowserRouter([
     path: '/login',
     element: <Login />
   },
+  {
+    path: '/dashboard',
+    element: <Dashboard />
+  }
 ]);
 
 ReactDOM.createRoot(document.getElementById('root')).render(

@@ -13,7 +13,7 @@ const Bar = () => {
                     <Navbar.Brand className="justify-content-start" href="#home">Truco Online</Navbar.Brand>
                     <Nav className="justify-content-end">
                         <Nav.Link href="/">Sign Up</Nav.Link>
-                        <Nav.Link href="Login">Login</Nav.Link>
+                        <Nav.Link href="/login">Login</Nav.Link>
                     </Nav>
                 </Container>
             </Navbar>
