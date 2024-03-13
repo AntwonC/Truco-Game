@@ -1,0 +1,78 @@
+.game-table-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr 1fr;
+    grid-template-areas:
+        ". button1 . "
+        "button3 table button2"
+        ". button4 .";
+}
+
+.user-name-table-one {
+    grid-area: button1;
+    justify-self: center;
+    align-self: center;
+}
+
+.user-name-table-two {
+    grid-area: button2;
+    justify-self: center;
+    align-self: center;
+}
+
+.user-name-table-three {
+    grid-area: button3;
+    justify-self: center;
+    align-self: center;
+}
+
+.user-name-table-four {
+    grid-area: button4;
+    justify-self: center;
+    align-self: center;
+}
+
+.join-table-button-1 {
+    grid-area: button1;
+    width: 50%;
+    height: 25%;
+    justify-self: center;
+    align-self: center;
+    background-color: teal;
+}
+
+.join-table-button-2 {
+    grid-area: button2;
+    width: 100%;
+    height: 25%;
+    justify-self: center;
+    align-self: center;
+    background-color: teal;
+}
+
+.join-table-button-3 {
+    grid-area: button3;
+    width: 100%;
+    height: 25%;
+    justify-self: center;
+    align-self: center;
+    background-color: teal;
+}
+
+.join-table-button-4 {
+    grid-area: button4;
+    width: 50%;
+    height: 25%;
+    justify-self: center;
+    align-self: center;
+    background-color: teal;
+}
+
+.game-table {
+    grid-area: table;
+    width: 150px;
+    height: 200px;
+    border: 7px solid black;
+    border-radius: 20%;
+    background-color: green;
+}

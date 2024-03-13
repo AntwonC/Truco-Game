@@ -42,6 +42,8 @@ const Dashboard = () => {
         if (res.status === 205) {
           // Show name instead
           console.log("Got back request");
+          // Reconnecting to room may go here
+
           //   console.log(res.fullName);
           //   const newData = { userName: res.fullName };
           //   setInfo(newData);
@@ -134,7 +136,7 @@ const Dashboard = () => {
   return (
     <>
       {joinedRoom ? (
-        <GameRoom socket={socket} roomNumber={roomNumber} />
+        <GameRoom socket={socket} roomNumber={roomNumber} user={user} />
       ) : (
         <>
           {isConnected ? <div>Connected</div> : <div>Not Connected</div>}

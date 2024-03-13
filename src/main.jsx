@@ -9,6 +9,7 @@ import './index.css'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './styles/signUpStyles.css';
 import './styles/dashboardStyles.css';
+import './styles/gameRoomStyles.css';
 
 
 //import { socketServer } from './socket.js';
