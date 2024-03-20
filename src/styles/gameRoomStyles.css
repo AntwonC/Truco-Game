@@ -1,6 +1,6 @@
 .game-table-container {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 2fr 1fr 2fr;
     grid-template-rows: 1fr 1fr 1fr;
     grid-template-areas:
         ". button1 . "
@@ -75,4 +75,18 @@
     border: 7px solid black;
     border-radius: 20%;
     background-color: green;
+}
+
+.player-two-hand-container {
+        display: grid;
+        grid-column: 3 / span 1;
+        grid-row: 2 / 3;
+        grid-column-gap: 10fr 1fr;   
+        width: 500%;     
+}
+
+.player-two-hand {
+    display: flex;
+    flex-direction: row;
+
 }

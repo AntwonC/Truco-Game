@@ -10,6 +10,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import './styles/signUpStyles.css';
 import './styles/dashboardStyles.css';
 import './styles/gameRoomStyles.css';
+import './styles/Card.css';
 
 
 //import { socketServer } from './socket.js';
@@ -25,8 +26,9 @@ const router = createBrowserRouter([
   },
   {
     path: '/dashboard',
-    element: <Dashboard />
+    element: <Dashboard errorElement={<ErrorBoundary />}/>
   }
+  
 ]);
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -34,3 +36,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <RouterProvider router={router} />
   </React.StrictMode>,
 )
+
+function ErrorBoundary() {
+  let error = useRouteError();
+  console.error(error);
+  return <div>Dang!</div>;
+}

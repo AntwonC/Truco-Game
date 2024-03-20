@@ -19,7 +19,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
 
   const { state } = useLocation();
-  const { user } = state;
+  const { user } = state; // problem: if user is null, upon refresh of disconnected version
 
   const [isConnected, setIsConnected] = useState(socket.connected);
   const [roomNumber, setRoomNumber] = useState(-1);
@@ -92,7 +92,7 @@ const Dashboard = () => {
 
   const joinRoomClicked = () => {
     console.log(`Should have sent event to join room ${roomNumber}`);
-    socket.emit("join-room", roomNumber);
+    socket.emit("join-room", roomNumber, user);
 
     socket.on("room-success", () => {
       setJoinedRoom(true);
@@ -109,6 +109,7 @@ const Dashboard = () => {
 
     const onConnect = () => {
       setIsConnected(true);
+      socket.emit("get-users-on-table");
     };
 
     const onDisconnect = () => {
@@ -118,13 +119,43 @@ const Dashboard = () => {
     socket.on("connect", onConnect);
     socket.on("disconnect", onDisconnect);
 
-    socket.on("left-room", () => {
+    socket.on("left-room", (userFromTable, userSlot, number) => {
       console.log("This leave room should happen");
+      console.log(`In Dashboard.jsx..... user is ${user}`);
       setJoinedRoom(false);
     });
 
+    socket.on("handle-refresh-page", (user) => {
+      setJoinedRoom(true);
+    });
+
+
+    /* 
+      on page refresh, direct user to the room based on the usertable from server
+      need -> user, roomNumber, emit join-room, setJoinedRoom -> true
+
+    */
+
+    
+
+    socket.on("get-users-table", (userArr) => {
+      if(userArr.length === 0) {
+        return ;
+      }
+
+    /*  for(let i = 0; i < userArr.length; i++) {
+        const userObject = userArr[i];
+        // user was in a room, redirect them to the room
+        if(userObject.name === user) {
+          setRoomNumber(userObject.room);
+          socket.emit("join-room", userObject.room);
+          setJoinedRoom(true);
+        }
+      } */
+    });
+
     const result = { username: user };
-    //  setInfo(result);
+      //setInfo(result);
     getData();
 
     return () => {
@@ -136,7 +167,8 @@ const Dashboard = () => {
   return (
     <>
       {joinedRoom ? (
-        <GameRoom socket={socket} roomNumber={roomNumber} user={user} />
+        
+        <GameRoom socket={socket} roomNumber={roomNumber} user={user} joined={joinedRoom} setJoin={setJoinedRoom}/>
       ) : (
         <>
           {isConnected ? <div>Connected</div> : <div>Not Connected</div>}
