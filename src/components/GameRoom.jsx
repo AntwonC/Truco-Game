@@ -6,7 +6,7 @@ import Navbar from "react-bootstrap/Navbar";
 import Nav from "react-bootstrap/Nav";
 import Card from './Card';
 
-const GameRoom = ({ socket, roomNumber, user, joined, setJoin }) => {
+const GameRoom = ({ socket, roomNumber, user, joined }) => {
 
   const URL = "http://localhost:3001";
 
@@ -21,6 +21,9 @@ const GameRoom = ({ socket, roomNumber, user, joined, setJoin }) => {
   const [userSlotTwo, setUserSlotTwo] = useState("");
   const [userSlotThree, setUserSlotThree] = useState("");
   const [userSlotFour, setUserSlotFour] = useState("");
+
+  const [bottomUserOne, setBottomUserOne] = useState(user);
+  const [topUserOne, setTopUserOne] = useState("");
 
   const [userTable, setUserTable] = useState([]);
 
@@ -165,15 +168,29 @@ const GameRoom = ({ socket, roomNumber, user, joined, setJoin }) => {
     if(joinSlotOne && joinSlotTwo) {
         console.log("START THE GAME!!");
         socket.emit('start-game', userSlotOne, userSlotTwo, roomNumber);
+
+        if(bottomUserOne !== userSlotOne) {
+          console.log(bottomUserOne);
+          console.log(`top should be userSlot1`);
+          setTopUserOne(userSlotOne);
+        }
         
+        if(bottomUserOne !== userSlotTwo) {
+          console.log(bottomUserOne);
+          console.log(`top should be userSlot2`);
+          setTopUserOne(userSlotTwo);
+        }
+        
+        console.log(`AFTER CALLING THE SETTER`);
+        console.log(bottomUserOne);
+        
+
     }
   }
 
   const showHand = (p1Hand) => {
-    if(p1Hand === undefined) {
-      return <></>;
-    }
-    return ( <div>
+
+    return ( <div className="player-cards">
         {p1Hand.map((element) => {
           return <Card suit={element.suit} rank={element.rank} key={element.key}/>
         })}
@@ -272,21 +289,49 @@ const GameRoom = ({ socket, roomNumber, user, joined, setJoin }) => {
 
     });
     
-    socket.on("start-game-confirmed", (deck, p1Hand, p2Hand) => {
-      
+    socket.on("start-game-confirmed", (deck, p1Hand, p2Hand, p1, p2, gameSession) => {
 
       console.log("Generate cards on the frontend now to the players...");
       console.log(deck);
-      console.log(`Player 1 Hand: `);
+      console.log(`Player 1 Hand: ${p1}`);
       console.log(p1Hand);
-      console.log(`Player 2 Hand: `);
+      console.log(`Player 2 Hand: ${p2}`);
       console.log(p2Hand);
+
+      console.log(`Game Session:`);
+      console.log(gameSession);
 
       setPlayerOneHand([...p1Hand]);
       setPlayerTwoHand([...p2Hand]);
+
+      console.log('bottom User One');
+      console.log(bottomUserOne);
+      
+     // setTopUserOne(bottomUserOne === userSlotTwo ? userSlotOne : userSlotTwo);
      // setGameStarted(true);
 
+     console.log(`Who's the current user in this room? ${user}`);
+    // socket.emit("current-user", user, roomNumber);
+     
 
+
+    });
+
+    socket.on("place-user-on-bottom", (user) => {
+      const userTemp = userSlotTwo;
+     // console.log(`User in place-user-on-bottom: ${user}`)
+    //  setUserSlotTwo(user);
+     // setUserSlotOne(userTemp);
+      const temp = [...playerOneHand];
+      const p2Temp = [...playerTwoHand];
+
+     // console.log(`Temp... p1 hand`);
+     // console.log(temp);
+     // console.log(`p2Temp... p2 hand`);
+     // console.log(p2Temp);
+     // setPlayerTwoHand([...temp]);
+     // setPlayerOneHand([...p2Temp]);
+      return;
     });
 
     // ask server to check for user already on a table in a room
@@ -326,8 +371,16 @@ const GameRoom = ({ socket, roomNumber, user, joined, setJoin }) => {
 
     // clean-up
     return () => {
-
+      socket.off("start-game-confirmed");
     }
+
+    /* We want to position the current user's hand in front of them
+       unique identifier => user
+       -> client has unique identifier 
+       -> user is always on the bottom
+       -> other user is always on the other side
+       -> 
+       */
 
 
   }, [socket, joinSlotOne, joinSlotTwo])
@@ -354,7 +407,7 @@ const GameRoom = ({ socket, roomNumber, user, joined, setJoin }) => {
                 {joinSlotOne 
                 ? 
                 <div>
-                  <h3 className="user-name-table-one">{userSlotOne}</h3> 
+                  <h3 className="user-name-table-one">{topUserOne.length > 0 ? topUserOne : ""}</h3> 
                   {playerOneHand.length > 0 
                   ? 
                   <>
@@ -371,7 +424,7 @@ const GameRoom = ({ socket, roomNumber, user, joined, setJoin }) => {
                 {joinSlotTwo 
                 ? 
                 <div className="player-two-hand-container">
-                  <h3 className="user-name-table-two">{userSlotTwo}</h3> 
+                  <h3 className="user-name-table-two">{bottomUserOne.length > 0 ? bottomUserOne : ""}</h3> 
                   {playerTwoHand.length > 0 
                   ? 
                   <div className="player-two-hand">

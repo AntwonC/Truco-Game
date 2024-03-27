@@ -168,7 +168,7 @@ const Dashboard = () => {
     <>
       {joinedRoom ? (
         
-        <GameRoom socket={socket} roomNumber={roomNumber} user={user} joined={joinedRoom} setJoin={setJoinedRoom}/>
+        <GameRoom socket={socket} roomNumber={roomNumber} user={user.toLowerCase()} joined={joinedRoom} />
       ) : (
         <>
           {isConnected ? <div>Connected</div> : <div>Not Connected</div>}
@@ -187,7 +187,7 @@ const Dashboard = () => {
               </Nav>
             </Container>
           </Navbar>
-          <h1>Hello, {user} </h1>
+          <h1>Hello, {user.toLowerCase()} </h1>
           <Container className="d-flex justify-content-center">
             <InputGroup size="sm w-50 mw-50">
               <InputGroup.Text>R</InputGroup.Text>

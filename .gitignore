@@ -16,6 +16,8 @@ dist-ssr
 *.local
 socket.js
 .prettierignore
+*.sh
+vite.config.js.times*.mjs
 
 # Editor directories and files
 .vscode/*
