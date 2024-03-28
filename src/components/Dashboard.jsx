@@ -119,16 +119,11 @@ const Dashboard = () => {
     socket.on("connect", onConnect);
     socket.on("disconnect", onDisconnect);
 
-    socket.on("left-room", (userFromTable, userSlot, number) => {
+    socket.on("left-room", (userFromTable, number, userTable) => {
       console.log("This leave room should happen");
       console.log(`In Dashboard.jsx..... user is ${user}`);
       setJoinedRoom(false);
     });
-
-    socket.on("handle-refresh-page", (user) => {
-      setJoinedRoom(true);
-    });
-
 
     /* 
       on page refresh, direct user to the room based on the usertable from server
@@ -161,6 +156,7 @@ const Dashboard = () => {
     return () => {
       socket.off("connect", onConnect);
       socket.off("disconnect", onDisconnect);
+      socket.off("left-room");
     };
   }, [socket]);
 
@@ -168,7 +164,7 @@ const Dashboard = () => {
     <>
       {joinedRoom ? (
         
-        <GameRoom socket={socket} roomNumber={roomNumber} user={user.toLowerCase()} joined={joinedRoom} />
+        <GameRoom socket={socket} roomNumber={roomNumber} user={user.toLowerCase()} />
       ) : (
         <>
           {isConnected ? <div>Connected</div> : <div>Not Connected</div>}

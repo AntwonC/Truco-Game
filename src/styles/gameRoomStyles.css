@@ -1,23 +1,23 @@
 .game-table-container {
     display: grid;
     grid-template-columns: 2fr;
-    grid-template-rows: 1fr 1fr 1fr;
+    grid-template-rows: 1fr;
     grid-template-areas:
-        ". button1 . "
-        "button3 table button2"
-        ". button4 .";
+        "top"
+        "table"
+        "bottom";
     
     
 }
 
 .user-name-table-one {
-    grid-area: button1;
+    grid-area: top;
     justify-self: center;
     align-self: center;
 }
 
 .user-name-table-two {
-    grid-area: button2;
+    grid-area: bottom;
     justify-self: center;
     align-self: center;
 }
@@ -81,16 +81,25 @@
     grid-column: 1 / span 1;
 }
 
+.special-card-container {
+    display: flex;
+    justify-content: end;
+    margin-top: 2em;
+}
+
 
 .player-cards {
     display: flex;
 }
+
+.player-one-hand-container {
+    grid-column: 1 / span 1;
+    grid-row: 1 / 1;
+}
 .player-two-hand-container {
-       
         grid-column: 1 / span 1;
         grid-row: 3 / 3;
  
-
         
 }
 

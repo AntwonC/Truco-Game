@@ -6,7 +6,7 @@ import Navbar from "react-bootstrap/Navbar";
 import Nav from "react-bootstrap/Nav";
 import Card from './Card';
 
-const GameRoom = ({ socket, roomNumber, user, joined }) => {
+const GameRoom = ({ socket, roomNumber, user }) => {
 
   const URL = "http://localhost:3001";
 
@@ -31,6 +31,10 @@ const GameRoom = ({ socket, roomNumber, user, joined }) => {
   const [playerTwoHand, setPlayerTwoHand] = useState([]);
 
   const [gameStarted, setGameStarted] = useState(false);
+
+  const [numInRoom, setNumInRoom] = useState(-1);
+
+  const [mahila, setMahila] = useState({});
 
   const getUsersOnTable = async () => {
     await fetch(`${URL}/dashboard/user-joined-table`, {
@@ -63,52 +67,6 @@ const GameRoom = ({ socket, roomNumber, user, joined }) => {
       });
   };
 
-  const joinTableButtonOne = () => {
- //   populateRoom();
- for(let i = 0; i < userTable.length; i++) {
-   const userObj = userTable[i];
-   console.log(userObj);
-   if(userObj.name === user) {
-     // console.log(userObj);
-     // console.log(user);
-     // return out of function to prevent clicking
-     return ;
-        }
-      }
-      // populateRoom();
-      setJoinSlotOne(true);
-      socket.emit("user-joined-table-1", user, roomNumber);
-     
-    // setUserSlotOne(user);
-  }
-
-  const joinTableButtonTwo = async () => {
-    // populateRoom ();
-    console.log(`User table when clicking buttontwo!!!`);
-    console.log(userTable);
-    // send request to server to see if user already joined a table
-    // returns out of function early to prevent clicking
-    for(let i = 0; i < userTable.length; i++) {
-      const userObj = userTable[i];
-      console.log(userObj);
-      if(userObj.name === user ) {
-        // console.log(userObj);
-        // console.log(user);
-        // return out of function to prevent clicking
-        return ;
-      }
-    }
-    //const found = userTable.find((element) => element.name === user);
-    //console.log(`found: ${found}`);
-    
-    
-    
-    setJoinSlotTwo(true);
-    socket.emit("user-joined-table-2", user, roomNumber);
-    
-    //setUserSlotTwo(user);
-    
- }
 
  const joinTableButtonThree = () => {
     setJoinSlotThree(true);
@@ -188,11 +146,18 @@ const GameRoom = ({ socket, roomNumber, user, joined }) => {
     }
   }
 
-  const showHand = (p1Hand) => {
+  const cardClicked = (evt) => {
+    console.log(`A card has been clicked`);
+    const { suit, value } = evt.target.dataset;
+    console.log(`suit: ${suit} | rank :${value}`);
+    console.log(evt.target.dataset);
+  }
+    
+  const showHand = (playerHand) => {
 
     return ( <div className="player-cards">
-        {p1Hand.map((element) => {
-          return <Card suit={element.suit} rank={element.rank} key={element.key}/>
+        {playerHand.map((element) => {
+          return <Card suit={element.suit} rank={element.rank} key={element.key} onClick={cardClicked}/>
         })}
     </div>)
   }
@@ -240,56 +205,34 @@ const GameRoom = ({ socket, roomNumber, user, joined }) => {
         //setUserTable(userTable);
     });
 
-    // get emit event sent from the server when a user joins a table
-    socket.on("user-joined-confirm-1", (tableUser, userArray) => {
-       // console.log(`${tableUser} joined the table!`);
-       // console.log(`Slot one: ${tableUser}`);
-        // should display the other user on the screen globally
-        setUserSlotOne(tableUser); // making sure everybody can see who joined which slot
-        setUserTable([...userArray]);
-        //  console.log(`userSlotOne: ${userSlotOne.length}`);
-        if(tableUser !== null) {
-          setJoinSlotOne(true);
-        } 
-        
-    });
 
-    socket.on("user-joined-confirm-2", (tableUser, userArray) => {
-       // console.log(`${tableUser} joined the table!`);
-       // console.log(`Slot Two: ${tableUser}`);
-        // should display the other user on the screen globally
-        setUserSlotTwo(tableUser);
-        setUserTable([...userArray]);
-
-        if(tableUser !== null) {
-            setJoinSlotTwo(true);
-        }
-        
-    });
-
-    // this will broadcast to all the users in the room that somebody left a room
-    socket.on("user-left-room", (userFromTable, slot, room, userArray) => {
-        if(slot === 1 && room === roomNumber ) {
-            setJoinSlotOne(false);
-            setUserSlotOne("");
-        } else if(slot === 2 && room === roomNumber ) {
-            setJoinSlotTwo(false);
-            setUserSlotTwo("");
-        }
-    });
 
     // this sets the usertable to match which user left the room
-    socket.on("left-room", (userFromTable, slot, room, userArray) => {
+   /* socket.on("left-room", (userFromTable, room, userArray, usersInRoom) => {
       
       console.log(`left-room getting triggered in GameRoom.jsx`);
-      console.log(slot);
+      
+      console.log(`${usersInRoom} in room ${room} now after leaving...`);
       console.log(userFromTable);
-      console.log(room);
+      setGameStarted(false);
+      setNumInRoom(usersInRoom);
+      //console.log(room);
       setUserTable([...userArray]);
 
+    }); */
+
+    socket.on("update-left-room", (userFromTable, room, userArray, usersInRoom) => {
+      console.log(`left-room getting triggered in GameRoom.jsx`);
+      
+      console.log(`${usersInRoom} in room ${room} now after leaving...`);
+      console.log(userFromTable);
+      setGameStarted(false);
+      setNumInRoom(usersInRoom);
+      //console.log(room);
+      setUserTable([...userArray]);
     });
     
-    socket.on("start-game-confirmed", (deck, p1Hand, p2Hand, p1, p2, gameSession) => {
+    socket.on("start-game-confirmed", (deck, p1Hand, p2Hand, p1, p2, specialCard, gameSession) => {
 
       console.log("Generate cards on the frontend now to the players...");
       console.log(deck);
@@ -301,8 +244,26 @@ const GameRoom = ({ socket, roomNumber, user, joined }) => {
       console.log(`Game Session:`);
       console.log(gameSession);
 
-      setPlayerOneHand([...p1Hand]);
-      setPlayerTwoHand([...p2Hand]);
+      console.log(`This is the special card..`);
+      console.log(specialCard);
+
+      setMahila(specialCard);
+
+
+      if(topUserOne === p1) {
+        setPlayerOneHand([...p1Hand]);
+      } else if(topUserOne === p2) {
+        setPlayerOneHand([...p2Hand]);
+      }
+
+      
+      if(p1 === user) {
+        setPlayerTwoHand([...p1Hand]);
+      } else if(p2 === user) {
+        setPlayerTwoHand([...p2Hand]);
+      }
+
+   //   setPlayerOneHand([...p1Hand]);
 
       console.log('bottom User One');
       console.log(bottomUserOne);
@@ -334,14 +295,43 @@ const GameRoom = ({ socket, roomNumber, user, joined }) => {
       return;
     });
 
+    socket.on("room-success", (userFromServer, room, usersInRoom, userTable) => {
+      console.log(`${userFromServer} joined room ${roomNumber}`);
+      console.log(usersInRoom);
+      console.log(`${usersInRoom} users in room ${roomNumber}`);
+
+      setNumInRoom(usersInRoom);
+      
+      setUserTable(userTable);
+
+      if(usersInRoom === 2) {
+       // setBottomUserOne(user);
+        setGameStarted(true);
+
+        for(let i = 0; i < userTable.length; i++) {
+          const userObject = userTable[i];
+          console.log(`BottomUserOne: ${bottomUserOne}`);
+          console.log(`userFromServer: ${userFromServer}`);
+          if(userObject.name !== user && userObject.room === roomNumber) {
+            console.log(`userObject.name: ${userObject.name}`);
+            
+            setTopUserOne(userObject.name);
+          }
+        }
+
+        socket.emit("start-game", user, topUserOne, roomNumber);
+      } 
+
+      
+    });
     // ask server to check for user already on a table in a room
    // socket.emit("check-user-joined-table", user);
     // ask server to give back table
     //socket.emit("get-users-on-table");
+    socket.emit("join-room", roomNumber, user);
+  //  populateRoom();
 
-    populateRoom();
-
-    gameStart();
+  //  gameStart();
   /*  socket.emit("get-users-on-table");
 
     socket.on("get-users-table", (userTable) => {
@@ -372,6 +362,7 @@ const GameRoom = ({ socket, roomNumber, user, joined }) => {
     // clean-up
     return () => {
       socket.off("start-game-confirmed");
+      socket.off("room-success");
     }
 
     /* We want to position the current user's hand in front of them
@@ -383,7 +374,7 @@ const GameRoom = ({ socket, roomNumber, user, joined }) => {
        */
 
 
-  }, [socket, joinSlotOne, joinSlotTwo])
+  }, [socket, numInRoom])
 
   return (
     <>
@@ -398,47 +389,41 @@ const GameRoom = ({ socket, roomNumber, user, joined }) => {
         </Container>
       </Navbar>
       
+          {gameStarted 
+          ?
+
+            <div className="special-card-container">
+              <Card suit={mahila.suit} rank={mahila.rank} key={mahila.key} />
+            </div>
+          :
+          <></>
+
+          }
      
       <Container>
 
+
+
         <div className="game-table-container">
             <div className="game-table">
+
             </div>
-                {joinSlotOne 
-                ? 
-                <div>
-                  <h3 className="user-name-table-one">{topUserOne.length > 0 ? topUserOne : ""}</h3> 
-                  {playerOneHand.length > 0 
-                  ? 
+                {gameStarted
+                  ?
                   <>
+                    <div className="player-one-hand-container">
+                    <h3 className="user-name-table-one">{topUserOne.length > 0 ? topUserOne : ""}</h3>
                     {showHand(playerOneHand)}
+                    </div> 
+                      
+                      <div className="player-two-hand-container">
+                      <h3 className="user-name-table-two">{user.length > 0 ? user : ""}</h3> 
+                      {showHand(playerTwoHand)}
+                      </div>
                   </>
                   :
                   <></>
-                  }
-                </div>
-                : 
-                <button className="join-table-button-1" onClick={joinTableButtonOne} >Join</button>}
-                
-                
-                {joinSlotTwo 
-                ? 
-                <div className="player-two-hand-container">
-                  <h3 className="user-name-table-two">{bottomUserOne.length > 0 ? bottomUserOne : ""}</h3> 
-                  {playerTwoHand.length > 0 
-                  ? 
-                  <div className="player-two-hand">
-                    
-                      {showHand(playerTwoHand)}
-                    
-                  </div>
-                  :
-                  <></>
-                  }
-                </div>
-                : 
-                <button className="join-table-button-2" onClick={joinTableButtonTwo} >Join</button>}
-                
+                }              
         </div>
 
         <Button size="sm" onClick={leaveRoomButton}>

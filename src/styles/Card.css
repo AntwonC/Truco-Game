@@ -19,6 +19,7 @@
     grid-row: span 2;
     width: 100%;
     aspect-ratio: 1 / 1;
+    pointer-events: none;
 }
 
 [data-value="2"] .pip:first-child {
@@ -386,22 +387,22 @@
 
 [data-suit="D"] .corner-number::after {
     content: url("/src/assets/diamond.svg");
-    width: .6em;
+    width: .8em;
 } 
 
 [data-suit="H"] .corner-number::after {
     content: url("/src/assets/heart.svg");
-    width: .6em;
+    width: .8em;
 }
 
 [data-suit="S"] .corner-number::after {
     content: url("/src/assets/spade.svg");
-    width: .6em;
+    width: .8em;
 }
 
 [data-suit="C"] .corner-number::after {
     content: url("/src/assets/club.svg");
-    width: .6em;
+    width: .8em;
 }
 
 
@@ -429,7 +430,7 @@
     background-repeat: no-repeat;
     background-position: center;
     background-size: cover;
-    width: 75%;
+    width: 110%;
 }
 
 [data-suit="D"] .pip {
@@ -437,7 +438,7 @@
     background-repeat: no-repeat;
     background-position: center;
     background-size: cover;
-    width: 75%;
+    width: 110%;
 }
 
 [data-suit="C"] .pip {
@@ -445,7 +446,7 @@
     background-repeat: no-repeat;
     background-position: center;
     background-size: cover;
-    width: 75%;
+    width: 110%;
 }
 
 .bg-card {

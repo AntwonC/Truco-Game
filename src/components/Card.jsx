@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 
 
 
-const Card = ({ suit, rank, id }) => {
+const Card = ({ suit, rank, id, onClick}) => {
 
     const [counter, setCounter] = useState(0);
 
@@ -141,7 +141,7 @@ const Card = ({ suit, rank, id }) => {
         <>
         { !backgroundOn ?
 
-       ( <div className="card" data-suit={suit} data-value={rank}>
+       ( <div className="card" data-suit={suit} data-value={rank} onClick={onClick}>
 
             {createPips()}
             
