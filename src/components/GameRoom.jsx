@@ -30,11 +30,25 @@ const GameRoom = ({ socket, roomNumber, user }) => {
   const [playerOneHand, setPlayerOneHand] = useState([]);
   const [playerTwoHand, setPlayerTwoHand] = useState([]);
 
+  const [p1, setP1] = useState("");
+  const [p2, setP2] = useState("");
+
   const [gameStarted, setGameStarted] = useState(false);
 
   const [numInRoom, setNumInRoom] = useState(-1);
 
   const [mahila, setMahila] = useState({});
+  const [turnCard, setTurnCard] = useState({});
+
+  const [teamOne, setTeamOne] = useState(-1);
+  const [teamTwo, setTeamTwo] = useState(-1);
+
+  const [playerTurns, setPlayerTurns] = useState([]);
+
+  const [gameSession, setGameSession] = useState({});
+
+  const [clicked, setClicked] = useState(false);
+
 
   const getUsersOnTable = async () => {
     await fetch(`${URL}/dashboard/user-joined-table`, {
@@ -88,6 +102,15 @@ const GameRoom = ({ socket, roomNumber, user }) => {
 
   const dePopulateRoom = () => {
 
+  }
+
+  const decideTurn = (playerTurns) => {
+    // [-1, 0]
+    if(playerTurns[0] === -1) { // player 1 goes first
+      setPlayerTurns([0, -1]);
+    } else if(playerTurns[1] === -1) { // player 2 goes next
+      setPlayerTurns([-1, 0]);
+    }
   }
 
   const populateRoom = () => {
@@ -151,14 +174,33 @@ const GameRoom = ({ socket, roomNumber, user }) => {
     const { suit, value } = evt.target.dataset;
     console.log(`suit: ${suit} | rank :${value}`);
     console.log(evt.target.dataset);
+    // when card is clicked, send event to server using socket
+    // send -> {user: -1 or 0, suit, rank}
+    // [-1, 0]
+    const ex = playerTurns[0] === -1 ? p1 : p2;
+    const card = {turn: ex, suit: suit, rank: value};
+    decideTurn(playerTurns);
+    const turnObject = [0, -1];
+    console.log(playerTurns);
+    console.log(card);
+    setClicked(true);
+    socket.emit("turn-play-card", card, gameSession, p1, p2, playerTurns, roomNumber);
   }
     
   const showHand = (playerHand) => {
 
     return ( <div className="player-cards">
         {playerHand.map((element) => {
-          return <Card suit={element.suit} rank={element.rank} key={element.key} onClick={cardClicked}/>
+          return <Card suit={element.suit} rank={element.rank} key={element.key} onClick={cardClicked} click={!clicked}/>
         })}
+    </div>)
+  }
+
+  const disableClickShowHand = (playerHand) => {
+    return ( <div className="player-cards">
+    {playerHand.map((element) => {
+      return <Card suit={element.suit} rank={element.rank} key={element.key} />
+    })}
     </div>)
   }
 
@@ -232,7 +274,7 @@ const GameRoom = ({ socket, roomNumber, user }) => {
       setUserTable([...userArray]);
     });
     
-    socket.on("start-game-confirmed", (deck, p1Hand, p2Hand, p1, p2, specialCard, gameSession) => {
+    socket.on("start-game-confirmed", (deck, p1Hand, p2Hand, p1, p2, turnCard, specialCard, gameSession) => {
 
       console.log("Generate cards on the frontend now to the players...");
       console.log(deck);
@@ -244,9 +286,24 @@ const GameRoom = ({ socket, roomNumber, user }) => {
       console.log(`Game Session:`);
       console.log(gameSession);
 
+      console.log(`This is the turn card..`);
+      console.log(turnCard);
+
       console.log(`This is the special card..`);
       console.log(specialCard);
 
+      setGameSession(gameSession);
+
+      setTeamOne(gameSession.teamOneScore);
+      setTeamTwo(gameSession.teamTwoScore);
+
+      setP1(p1);
+      setP2(p2);
+
+      setPlayerTurns(gameSession.playerTurn)
+
+
+      setTurnCard(turnCard);
       setMahila(specialCard);
 
 
@@ -324,6 +381,12 @@ const GameRoom = ({ socket, roomNumber, user }) => {
 
       
     });
+
+    socket.on("turn-completed", (gameSession) => {
+      console.log(`Did the turns change?`);
+      console.log(gameSession.playerTurn);
+      setPlayerTurns(gameSession.playerTurn);
+    })
     // ask server to check for user already on a table in a room
    // socket.emit("check-user-joined-table", user);
     // ask server to give back table
@@ -388,37 +451,92 @@ const GameRoom = ({ socket, roomNumber, user }) => {
           <Navbar.Brand>Truco Online</Navbar.Brand>
         </Container>
       </Navbar>
+
+
       
-          {gameStarted 
-          ?
+              <div className="rectangle-container">
+                <div className="turn-container">
+                  <div className="top-user-turn">
+                    {topUserOne}
+                    <div className="circle"></div>
+                    <div className="circle"></div>
+                    <div className="circle"></div>
+                  </div>
+                  <div className="top-user-turn">
+                    {user}
+                    <div className="circle"></div>
+                    <div className="circle"></div>
+                    <div className="circle"></div>
+                    </div>
+                </div>
+                <div className="score-container">
+                  Score
+                  <div>{teamOne}</div>
+                  <div>{teamTwo}</div>
+                </div>
+              <div className="special-card-container">
+                <div>
+                  Turn Card
+                  <Card suit={turnCard.suit} rank={turnCard.rank} />
+                </div>
 
-            <div className="special-card-container">
-              <Card suit={mahila.suit} rank={mahila.rank} key={mahila.key} />
-            </div>
-          :
-          <></>
-
-          }
+              <div >
+                Special Card
+                <Card suit={mahila.suit} rank={mahila.rank} key={mahila.key} />
+              </div>
+              </div>
+                
+              </div>
+ 
      
       <Container>
 
-
-
+            
+              
         <div className="game-table-container">
             <div className="game-table">
-
             </div>
                 {gameStarted
                   ?
                   <>
                     <div className="player-one-hand-container">
-                    <h3 className="user-name-table-one">{topUserOne.length > 0 ? topUserOne : ""}</h3>
-                    {showHand(playerOneHand)}
+
+                    <h3 className="user-name-table-one">
+                      {topUserOne.length > 0 ? topUserOne : ""}
+                      </h3>
+                      
+                    <div>
+                      {(playerTurns[0] === -1 && p1 === topUserOne || playerTurns[1] === -1 && p2 === topUserOne) 
+                      ?
+                      <>
+                      <div className="circle"></div>
+                      {disableClickShowHand(playerOneHand)}
+                      </>
+                      :
+                      <> 
+                      {disableClickShowHand(playerOneHand)}
+                      </>
+                      }
+
+
+                      
+                    
+                      </div>
                     </div> 
                       
                       <div className="player-two-hand-container">
-                      <h3 className="user-name-table-two">{user.length > 0 ? user : ""}</h3> 
+                      {playerTurns[0] === -1 && p1 === user || playerTurns[1] === -1 && p2 === user
+                      ?
+                      <>
+                      <div className="circle"></div>
                       {showHand(playerTwoHand)}
+                      </>
+                      :
+                      <>{disableClickShowHand(playerTwoHand)}</>
+                      }
+
+                      <h3 className="user-name-table-two">{user.length > 0 ? user : ""}</h3> 
+                      
                       </div>
                   </>
                   :
@@ -442,4 +560,24 @@ export default GameRoom;
  * 
  *                 {joinSlotThree ? <h3 className="user-name-table-three">{userSlotThree}</h3> : <button className="join-table-button-3" onClick={joinTableButtonThree}>Join</button>}
                 {joinSlotFour ? <h3 className="user-name-table-four">{userSlotFour}</h3> : <button className="join-table-button-4" onClick={joinTableButtonFour}>Join</button>}
- */
+ 
+                       {playerTurns[1] === -1 && p2 === user
+                      ?
+                      <div className="circle"></div>
+                      :
+                      <></>
+                      }
+
+                      {playerTurns[1] === -1 && p2 === topUserOne
+                      ?
+                      <>
+                      <div className="circle"></div>
+                     
+                      </>
+                      :
+                      <></>
+                      }
+
+                      || playerTurns[1] === -1 && p2 === topUserOne
+ 
+                */

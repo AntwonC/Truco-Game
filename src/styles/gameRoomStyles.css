@@ -6,6 +6,7 @@
         "top"
         "table"
         "bottom";
+    width: 300px;
     
     
 }
@@ -70,6 +71,30 @@
     background-color: teal;
 }
 
+.rectangle-container {
+    display: flex;
+    width: 350px;
+    height: 150px;
+    background: teal;
+    margin-bottom: 2em;
+    justify-content: space-evenly;
+}
+
+
+.score-container {
+    display: flex;
+    flex-direction: column;
+    width: 50px;
+    gap: 20px;
+    border-right: 3px red solid;
+}
+
+.special-card-container {
+    display: flex;
+    align-content: flex-end;
+    gap: 10px;
+    
+}
 .game-table {
     grid-area: table;
     width: 150px;
@@ -81,25 +106,41 @@
     grid-column: 1 / span 1;
 }
 
-.special-card-container {
+.turn-container {
     display: flex;
-    justify-content: end;
-    margin-top: 2em;
+    
+   
+}
+
+.top-user-turn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border-right: 3px red solid;
+    gap: 10px;
+}
+.circle {
+    width: 25px;
+    height: 25px;
+    border-radius: 15px;
+    background: white;
 }
 
 
 .player-cards {
     display: flex;
+    gap: 5px;
 }
 
 .player-one-hand-container {
     grid-column: 1 / span 1;
     grid-row: 1 / 1;
+    justify-self: center;
 }
 .player-two-hand-container {
         grid-column: 1 / span 1;
         grid-row: 3 / 3;
- 
+        justify-self: center;
         
 }
 

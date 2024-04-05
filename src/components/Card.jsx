@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 
 
 
-const Card = ({ suit, rank, id, onClick}) => {
+const Card = ({ suit, rank, id, onClick, click}) => {
 
     const [counter, setCounter] = useState(0);
 
@@ -121,12 +121,12 @@ const Card = ({ suit, rank, id, onClick}) => {
 
     const cardClicked = () => {
         setBackgroundOn(!backgroundOn);
-        if(selected === false) {
+     /*   if(selected === false) {
             selectChange(true);
         } else {
             selectChange(false);
-        }
-        console.log(selected);
+        } */
+      //  console.log(selected);
     }
 
     const changeSelect = () => {
@@ -154,7 +154,7 @@ const Card = ({ suit, rank, id, onClick}) => {
         
         :
         
-        (<div className="bg-card"></div>)
+        (<div className="bg-card" onClick={cardClicked}></div>)
         }
         </>
        

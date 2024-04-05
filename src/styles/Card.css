@@ -454,10 +454,10 @@
     --height: calc(var(--width) * 1.4);
     width: var(--width);
     height: var(--height);
-    background-color: white;
+    
     border-radius: .25em;
     padding: 1em;
-    background-image: url("./assets/back.png");
+    background-image: url("/src/assets/back.png");
     background-size: contain;
     background-repeat: no-repeat;
 }
@@ -472,5 +472,6 @@
 
 flex: 1 1 0;
 overflow-x: hidden;
+background-color: white;
 **/
 
