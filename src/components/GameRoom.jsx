@@ -179,10 +179,15 @@ const GameRoom = ({ socket, roomNumber, user }) => {
   }
 
   const cardClicked = (evt) => {
+    
     console.log(`A card has been clicked`);
     const { suit, value } = evt.target.dataset;
     console.log(`suit: ${suit} | rank :${value}`);
     console.log(evt.target.dataset);
+
+    if(suit === undefined || value === undefined) { // bug where clicking the corner would make it the other player's turn without playing a card
+      return ;
+    }
     // when card is clicked, send event to server using socket
     // send -> {user: -1 or 0, suit, rank}
     // [-1, 0]
@@ -200,6 +205,7 @@ const GameRoom = ({ socket, roomNumber, user }) => {
   }
     
   const showHand = (playerHand) => {
+    
 
     return ( <div className="player-cards">
         {playerHand.map((element) => {
@@ -248,7 +254,17 @@ const GameRoom = ({ socket, roomNumber, user }) => {
         })}</div>
       )
     }
-  }
+
+    return (
+      <div>{round.map((element) => {
+        if(element === 0) {
+          return <div className="green-circle"> </div>
+        } else {
+          return <div className="circle"></div>
+        }
+      })}</div>
+    )
+  } 
 
   const updateRoundTwo = (round, player, userWonRound) => {
     if(player === userWonRound) {
