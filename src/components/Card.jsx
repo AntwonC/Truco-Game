@@ -139,7 +139,7 @@ const Card = ({ suit, rank, id, onClick, click}) => {
 
     return (
         <>
-        { !backgroundOn ?
+        { click ?
 
        ( <div className="card" data-suit={suit} data-value={rank} onClick={onClick}>
 

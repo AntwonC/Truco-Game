@@ -5,6 +5,7 @@ import Button from "react-bootstrap/Button";
 import Navbar from "react-bootstrap/Navbar";
 import Nav from "react-bootstrap/Nav";
 import Card from './Card';
+import e from "cors";
 
 const GameRoom = ({ socket, roomNumber, user }) => {
 
@@ -29,9 +30,16 @@ const GameRoom = ({ socket, roomNumber, user }) => {
 
   const [playerOneHand, setPlayerOneHand] = useState([]);
   const [playerTwoHand, setPlayerTwoHand] = useState([]);
-
+  const [fakeHand, setFakeHand] = useState([{suit: 'S', rank: 3}, {suit: 'S', rank: 3}, {suit: 'S', rank: 3}]);
+  const [fakeHandTwo, setFakeHandTwo] = useState([{suit: 'S', rank: 3}, {suit: 'S', rank: 3}, {suit: 'S', rank: 3}]);
+  
   const [p1, setP1] = useState("");
   const [p2, setP2] = useState("");
+
+
+  const [playerOneRound, setPlayerOneRound] = useState([]);
+  const [playerTwoRound, setPlayerTwoRound] = useState([]);
+  const [userWonRound, setUserWonRound] = useState("");
 
   const [gameStarted, setGameStarted] = useState(false);
 
@@ -44,6 +52,7 @@ const GameRoom = ({ socket, roomNumber, user }) => {
   const [teamTwo, setTeamTwo] = useState(-1);
 
   const [playerTurns, setPlayerTurns] = useState([]);
+  const [gameBoard, setGameBoard] = useState([]);
 
   const [gameSession, setGameSession] = useState({});
 
@@ -179,29 +188,80 @@ const GameRoom = ({ socket, roomNumber, user }) => {
     // [-1, 0]
     const ex = playerTurns[0] === -1 ? p1 : p2;
     const card = {turn: ex, suit: suit, rank: value};
+
+
+
     decideTurn(playerTurns);
     const turnObject = [0, -1];
     console.log(playerTurns);
     console.log(card);
-    setClicked(true);
-    socket.emit("turn-play-card", card, gameSession, p1, p2, playerTurns, roomNumber);
+   
+    socket.emit("turn-play-card", card, gameSession, playerTurns, roomNumber);
   }
     
   const showHand = (playerHand) => {
 
     return ( <div className="player-cards">
         {playerHand.map((element) => {
-          return <Card suit={element.suit} rank={element.rank} key={element.key} onClick={cardClicked} click={!clicked}/>
+          return <Card suit={element.suit} rank={element.rank} key={element.key} onClick={cardClicked} click={true}/>
         })}
     </div>)
   }
 
-  const disableClickShowHand = (playerHand) => {
+  const disableClickShowHand = (playerHand, player) => {
+
+    if(player === user ) {
+      return ( <div className="player-cards">
+      {playerHand.map((element) => {
+        return <Card suit={element.suit} rank={element.rank} key={element.key}  click={true} />
+      })}
+      </div>)
+    } else {
     return ( <div className="player-cards">
     {playerHand.map((element) => {
-      return <Card suit={element.suit} rank={element.rank} key={element.key} />
+      return <Card suit={element.suit} rank={element.rank} key={element.key}  click={false} />
     })}
     </div>)
+
+    }
+  }
+
+  const updateRound = (round, player, userWonRound) => {
+    if(player === userWonRound) {
+      return (
+        <div>{round.map((element) => {
+          if(element === 0) {
+            return <div className="green-circle"> </div>
+          } else {
+            return <div className="circle"></div>
+          }
+        })}</div>
+      )
+    } else if(player === userWonRound) {
+      return (
+        <div>{round.map((element) => {
+          if(element === 0) {
+            return <div className="green-circle"> </div>
+          } else {
+            return <div className="circle"></div>
+          }
+        })}</div>
+      )
+    }
+  }
+
+  const updateRoundTwo = (round, player, userWonRound) => {
+    if(player === userWonRound) {
+      return (
+        <div>{round.map((element) => {
+          if(element === 0) {
+            return <div className="green-circle"> </div>
+          } else {
+            return <div className="circle"></div>
+          }
+        })}</div>
+      )
+    }
   }
 
 
@@ -249,19 +309,6 @@ const GameRoom = ({ socket, roomNumber, user }) => {
 
 
 
-    // this sets the usertable to match which user left the room
-   /* socket.on("left-room", (userFromTable, room, userArray, usersInRoom) => {
-      
-      console.log(`left-room getting triggered in GameRoom.jsx`);
-      
-      console.log(`${usersInRoom} in room ${room} now after leaving...`);
-      console.log(userFromTable);
-      setGameStarted(false);
-      setNumInRoom(usersInRoom);
-      //console.log(room);
-      setUserTable([...userArray]);
-
-    }); */
 
     socket.on("update-left-room", (userFromTable, room, userArray, usersInRoom) => {
       console.log(`left-room getting triggered in GameRoom.jsx`);
@@ -285,6 +332,8 @@ const GameRoom = ({ socket, roomNumber, user }) => {
 
       console.log(`Game Session:`);
       console.log(gameSession);
+     // const parsedGameData = JSON.parse(gameSession);
+     // console.log(parsedGameData);
 
       console.log(`This is the turn card..`);
       console.log(turnCard);
@@ -307,16 +356,17 @@ const GameRoom = ({ socket, roomNumber, user }) => {
       setMahila(specialCard);
 
 
-      if(topUserOne === p1) {
+    /*  if(topUserOne === p1) {
         setPlayerOneHand([...p1Hand]);
       } else if(topUserOne === p2) {
         setPlayerOneHand([...p2Hand]);
-      }
+      } */
 
       
       if(p1 === user) {
-        setPlayerTwoHand([...p1Hand]);
-      } else if(p2 === user) {
+        setPlayerOneHand([...p1Hand]);
+      }
+       if(p2 === user) {
         setPlayerTwoHand([...p2Hand]);
       }
 
@@ -337,18 +387,10 @@ const GameRoom = ({ socket, roomNumber, user }) => {
 
     socket.on("place-user-on-bottom", (user) => {
       const userTemp = userSlotTwo;
-     // console.log(`User in place-user-on-bottom: ${user}`)
-    //  setUserSlotTwo(user);
-     // setUserSlotOne(userTemp);
+
       const temp = [...playerOneHand];
       const p2Temp = [...playerTwoHand];
 
-     // console.log(`Temp... p1 hand`);
-     // console.log(temp);
-     // console.log(`p2Temp... p2 hand`);
-     // console.log(p2Temp);
-     // setPlayerTwoHand([...temp]);
-     // setPlayerOneHand([...p2Temp]);
       return;
     });
 
@@ -361,39 +403,96 @@ const GameRoom = ({ socket, roomNumber, user }) => {
       
       setUserTable(userTable);
 
+
+
       if(usersInRoom === 2) {
        // setBottomUserOne(user);
         setGameStarted(true);
-
+        let tempVar = "";
         for(let i = 0; i < userTable.length; i++) {
           const userObject = userTable[i];
           console.log(`BottomUserOne: ${bottomUserOne}`);
           console.log(`userFromServer: ${userFromServer}`);
           if(userObject.name !== user && userObject.room === roomNumber) {
             console.log(`userObject.name: ${userObject.name}`);
+            tempVar = userObject.name;
             
             setTopUserOne(userObject.name);
           }
         }
+        
+        console.log(tempVar);
 
-        socket.emit("start-game", user, topUserOne, roomNumber);
+        socket.emit("start-game", tempVar, user, roomNumber);
+
       } 
 
       
     });
 
-    socket.on("turn-completed", (gameSession) => {
+    socket.on("turn-completed", (gameSess, p1Hand, p2Hand, roundOne, roundTwo) => {
+      console.log(`-------------------------`);
+      console.log('Game Sess:');
+      console.log(gameSess);
+      console.log(`-------------------------`);
       console.log(`Did the turns change?`);
-      console.log(gameSession.playerTurn);
-      setPlayerTurns(gameSession.playerTurn);
-    })
+      console.log(gameSess.playerTurn);
+      console.log(`Did the gameSession object change?`);
+      console.log(typeof gameSess);
+
+      setGameSession(gameSess);
+
+      setPlayerOneRound([...roundOne]);
+      setPlayerTwoRound([...roundTwo]);
+      // Why is p1Hand not iterable? Could it not be an array?
+      console.log(p1Hand);
+    //  console.log(p2Hand);
+
+     // const hand1 = [...p1Hand];
+     // const hand2 =[...p2Hand];
+   //  if(p1Hand === undefined) {
+    //  console.log(`p1Hand is undefined?`);
+    //  return ;
+    // }
+
+      setPlayerOneHand([...p1Hand]);
+      setPlayerTwoHand([...p2Hand]);
+
+      setPlayerTurns(gameSess.playerTurn);
+      
+      if(gameSess.gameBoard.length === 0) {
+        // put animation here??
+        setGameBoard([]);
+      } else {
+        setGameBoard(gameSess.gameBoard);
+      }
+
+    });
+
+    socket.on("winner-round", (winner, p1RoundsArr, p2RoundsArr) => {
+      const winnerUser = winner.turn;
+
+      setUserWonRound(winnerUser);
+
+      if(winnerUser === p1) {
+        // increment round for the user...
+        setPlayerOneRound([...p1RoundsArr]);
+      } else if(winnerUser === p2) {
+        setPlayerTwoRound([...p2RoundsArr]);
+      }
+    });
+
+    socket.on("game-started-already", () => {
+      console.log(`Game already started for that room`);
+
+    });
     // ask server to check for user already on a table in a room
    // socket.emit("check-user-joined-table", user);
     // ask server to give back table
     //socket.emit("get-users-on-table");
     socket.emit("join-room", roomNumber, user);
   //  populateRoom();
-
+    
   //  gameStart();
   /*  socket.emit("get-users-on-table");
 
@@ -426,6 +525,9 @@ const GameRoom = ({ socket, roomNumber, user }) => {
     return () => {
       socket.off("start-game-confirmed");
       socket.off("room-success");
+      socket.off("turn-completed");
+      socket.off("confirmed-user-on-table");
+      socket.off("update-left-room");
     }
 
     /* We want to position the current user's hand in front of them
@@ -457,16 +559,15 @@ const GameRoom = ({ socket, roomNumber, user }) => {
               <div className="rectangle-container">
                 <div className="turn-container">
                   <div className="top-user-turn">
-                    {topUserOne}
-                    <div className="circle"></div>
-                    <div className="circle"></div>
-                    <div className="circle"></div>
+                    {p1 === "" ? "" : p1
+
+                     }
+                    {updateRound(playerOneRound, p1, userWonRound)}
+                    
                   </div>
                   <div className="top-user-turn">
-                    {user}
-                    <div className="circle"></div>
-                    <div className="circle"></div>
-                    <div className="circle"></div>
+                    {p2 === "" ? "" : p2}
+                    {updateRound(playerTwoRound, p2, userWonRound)}
                     </div>
                 </div>
                 <div className="score-container">
@@ -477,12 +578,12 @@ const GameRoom = ({ socket, roomNumber, user }) => {
               <div className="special-card-container">
                 <div>
                   Turn Card
-                  <Card suit={turnCard.suit} rank={turnCard.rank} />
+                  <Card suit={turnCard.suit} rank={turnCard.rank} click={true} />
                 </div>
 
               <div >
                 Special Card
-                <Card suit={mahila.suit} rank={mahila.rank} key={mahila.key} />
+                <Card suit={mahila.suit} rank={mahila.rank} key={mahila.key} click={true}/>
               </div>
               </div>
                 
@@ -495,6 +596,11 @@ const GameRoom = ({ socket, roomNumber, user }) => {
               
         <div className="game-table-container">
             <div className="game-table">
+
+
+              {gameBoard.map((element) => {
+                return (<Card suit={element.suit} rank={element.rank} key={element.key}  click={true} />)
+              })}
             </div>
                 {gameStarted
                   ?
@@ -506,17 +612,49 @@ const GameRoom = ({ socket, roomNumber, user }) => {
                       </h3>
                       
                     <div>
-                      {(playerTurns[0] === -1 && p1 === topUserOne || playerTurns[1] === -1 && p2 === topUserOne) 
+
+                    {p1 === topUserOne
+                      ?
+                      <>
+                      {playerTurns[0] === -1 
                       ?
                       <>
                       <div className="circle"></div>
-                      {disableClickShowHand(playerOneHand)}
+                      {disableClickShowHand(playerOneHand, p1)}
+                     
                       </>
                       :
-                      <> 
-                      {disableClickShowHand(playerOneHand)}
-                      </>
+                      <>{disableClickShowHand(playerOneHand, p1)}</>
                       }
+                    
+                      
+                      </>
+                      :
+                      <></>
+                    }
+
+                    {p2 === topUserOne
+                      ?
+                      <>
+                      {playerTurns[1] === -1 
+                      ?
+                      <>
+                      <div className="circle"></div>
+                      {disableClickShowHand(playerTwoHand, p2)}
+                     
+                      </>
+                      :
+                      <>{disableClickShowHand(playerTwoHand, p2)}</>
+                      }
+                    
+                      
+                      </>
+                      :
+                      <></>
+                    }
+
+
+                      
 
 
                       
@@ -525,15 +663,48 @@ const GameRoom = ({ socket, roomNumber, user }) => {
                     </div> 
                       
                       <div className="player-two-hand-container">
-                      {playerTurns[0] === -1 && p1 === user || playerTurns[1] === -1 && p2 === user
+                      {p1 === user
+                      ?
+                      <>
+                      {playerTurns[0] === -1 
+                      ?
+                      <>
+                      <div className="circle"></div>
+                      {showHand(playerOneHand)}
+                     
+                      </>
+                      :
+                      <>{disableClickShowHand(playerOneHand, p1)}</>
+                      }
+                    
+                      
+                      </>
+                      :
+                      <></>
+                      }
+
+                      { p2 === user
+                      ?
+                      <>
+                      {playerTurns[1] === -1 
                       ?
                       <>
                       <div className="circle"></div>
                       {showHand(playerTwoHand)}
+                     
                       </>
                       :
-                      <>{disableClickShowHand(playerTwoHand)}</>
+                      <> {disableClickShowHand(playerTwoHand, p2)}</>
                       }
+                    
+                      
+                      </>
+                      :
+                      <></>
+                      }
+
+
+
 
                       <h3 className="user-name-table-two">{user.length > 0 ? user : ""}</h3> 
                       
@@ -579,5 +750,17 @@ export default GameRoom;
                       }
 
                       || playerTurns[1] === -1 && p2 === topUserOne
+
+                                            {(playerTurns[0] === -1 && p1 === topUserOne) || playerTurns[1] === -1 && p2 === topUserOne
+                      ?
+                      <>
+                      <div className="circle"></div>
+                      {disableClickShowHand(fakeHand, topUserOne)}
+                      </>
+                      :
+                      <> 
+                      {disableClickShowHand(fakeHand, topUserOne)}
+                      </>
+                      }
  
                 */
