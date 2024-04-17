@@ -490,12 +490,69 @@ const GameRoom = ({ socket, roomNumber, user }) => {
 
       setUserWonRound(winnerUser);
 
+      // check if anybody has won this turn...
+      const p1TempArr = p1RoundsArr;
+      const p2TempArr = p2RoundsArr;
+
+      // [0, -1, -1]
+      // [0, 0, -1]
+
+      // [-1, 0, -1]
+      // [0, -1, 0]
+
+      let p1Counter = 0;
+
+      for(let i = 0; i < p1TempArr.length; i++) {
+        const currentIndex = p1TempArr[i];
+
+        if(p1Counter === 2) {
+          // p1 won the turn...reset the state for next turn...
+          console.log(`player 1 won this turn!`);
+          socket.emit("reset-next-turn", p1, roomNumber);
+          
+        } else if(currentIndex === 0) {
+          p1Counter++;
+        }
+      }
+
+      let p2Counter = 0;
+
+      for(let i = 0; i < p2TempArr.length; i++) {
+        const currentIndex = p2TempArr[i];
+
+        if(p2Counter === 2) {
+          // p2 won the turn...
+          console.log(`player 2 won this turn!`);
+          socket.emit("reset-next-turn", p2, roomNumber);
+        } else if(currentIndex === 0) {
+          p2Counter++;
+        }
+      }
+
+
       if(winnerUser === p1) {
         // increment round for the user...
         setPlayerOneRound([...p1RoundsArr]);
       } else if(winnerUser === p2) {
         setPlayerTwoRound([...p2RoundsArr]);
       }
+    });
+
+    socket.on("reset-completed", (p1Hand, p2Hand, turnCard, specialCard, teamOneScore, teamTwoScore) => {
+      // currentGame.getPlayerOneHand(),
+      // currentGame.getPlayerTwoHand(), 
+      //currentGame.turnCard, currentGame.specialCard, 
+      //currentGame.getTeamOneScore(), currentGame.getTeamTwoScore()
+      setPlayerOneHand([...p1Hand]);
+      setPlayerTwoHand([...p2Hand]);
+
+      setTurnCard(turnCard);
+      setMahila(specialCard);
+
+      setTeamOne(teamOneScore);
+      setTeamTwo(teamTwoScore);
+      
+
     });
 
     socket.on("game-started-already", () => {

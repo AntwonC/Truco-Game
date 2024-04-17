@@ -173,7 +173,7 @@ const socketServer = (server) => {
                 console.log("Deck is being created....");
                 gameSession.createDeck();
                 gameSession.shuffleDeck();
-                gameSession.dealTurnCard();
+                gameSession.dealTurnCard(gameSession.getDeck());
                 gameSession.dealSpecialCard();
                 gameSession.dealPlayerOne();
                 gameSession.dealPlayerTwo();
@@ -186,7 +186,7 @@ const socketServer = (server) => {
             }
 
         });
-        
+
         socket.on("turn-play-card", (card, gameSession, playerTurns, roomNumber) => {
             const sizeOfGameSession = gamesInSession.length;
             let currentGame = {};
@@ -251,6 +251,8 @@ const socketServer = (server) => {
                 const roundWinner = currentGame.checkWinnerRound(board);
                 // need to implement special card taking into effect, but
                 // first get turn working properly
+
+                // put the cards from gameboard back into deck.. reshuffle..
                 console.log(`RoundWinner....`)
                 console.log(roundWinner);
 
@@ -277,6 +279,19 @@ const socketServer = (server) => {
                     console.log("-------------------");
                     currentGame.p2Rounds[roundIndex] = 0;
                 }
+
+                // create a setter function for this..
+                for(let i = 0; i < currentGame.gameBoard.length; i++) {
+                    
+                    currentGame.deck.push(currentGame.gameBoard[i]);
+                    
+                }
+
+                // put turn card back into deck
+                currentGame.deck.push(currentGame.turnCard);
+
+                // should be full deck now...
+                console.log(currentGame.getDeck());
 
                 currentGame.gameBoard = [];
                 io.to(roomNumber).emit("winner-round", roundWinner, currentGame.p1Rounds, currentGame.p2Rounds);
@@ -313,7 +328,61 @@ const socketServer = (server) => {
 
         });
 
+        socket.on("reset-next-turn", (player, roomNumber) => {
+            const sizeOfGameSession = gamesInSession.length;
+            let currentGame = {};
+            console.log(`sizeOfGameSession: ${sizeOfGameSession}`);
 
+            for(let i = 0; i < sizeOfGameSession; i++) {
+                const gameObject = gamesInSession[i];
+               // console.log(`----------------------------`);
+               // console.log(`GameObject here`);
+              //  console.log(gameObject);
+              //  console.log(`----------------------------`);
+                if(gameObject.roomNumber === roomNumber) {
+                    currentGame = gameObject;
+                    break;
+                }
+            }
+
+            console.log(`current game in RESET-NEXT-TURN`);
+
+            const p1 = currentGame.getPlayerOne();
+            const p2 = currentGame.getPlayerTwo();
+
+            if(p1 === player) {
+                let currentScoreOne = currentGame.getTeamOneScore();
+
+                currentGame.setTeamOneScore(currentScoreOne + 1);
+                currentGame.playerTurn = [-1, 0];
+            } else if(p2 === player) {
+                let currentScoreTwo = currentGame.getTeamTwoScore();
+
+                currentGame.setTeamTwoScore(currentScoreTwo + 1);
+                
+                currentGame.playerTurn = [0, -1];
+            }
+
+            currentGame.shuffleDeck();
+            console.log(`----------------------`);
+            console.log(currentGame.deck);
+            console.log(`----------------------`);
+            // winner goes first..
+            currentGame.dealTurnCard(currentGame.getDeck());
+            currentGame.dealSpecialCard();
+
+            currentGame.dealPlayerOne();
+            currentGame.dealPlayerTwo();
+
+            currentGame.p1Rounds = [-1, -1, -1];
+            currentGame.p2Rounds = [-1, -1, -1];
+
+        
+            // io.to(roomNumber).emit("start-game-confirmed", gameSession.deck, gameSession.playerOneHand, gameSession.playerTwoHand, gameSession.getPlayerOne(), gameSession.getPlayerTwo(), gameSession.turnCard, gameSession.specialCard, gameSession);
+            io.to(roomNumber).emit("reset-completed", currentGame.getPlayerOneHand(), currentGame.getPlayerTwoHand(), currentGame.turnCard, currentGame.specialCard, currentGame.getTeamOneScore(), currentGame.getTeamTwoScore());
+
+
+        });
 
         
     });

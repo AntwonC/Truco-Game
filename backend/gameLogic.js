@@ -12,6 +12,7 @@ class gameLoop {
     // will add 2 more players when get 1 v 1 working
 
     gameBoard = [];
+
     teamOneScore = 0;
     teamTwoScore = 0;
 
@@ -51,8 +52,16 @@ class gameLoop {
         this.playerTwo = user;
     }
 
+    getTeamOneScore = () => {
+        return this.teamOneScore;
+    }
+
     setTeamOneScore = (score) => {
         this.teamOneScore = score;
+    }
+
+    getTeamTwoScore = () => {
+        return this.teamTwoScore;
     }
 
     setTeamTwoScore = (score) => {
@@ -142,6 +151,7 @@ class gameLoop {
         return tempDeck;
     }
 
+
     dealPlayerOne = () => {
         // start from the "top" which is the end of the array
         let deckCounter = this.deck.length - 1;
@@ -164,8 +174,11 @@ class gameLoop {
         }
     }
 
-    dealTurnCard = () => {
-        this.turnCard = this.deck.pop();
+    dealTurnCard = (deck) => {
+        this.turnCard = deck.pop();
+        console.log(`--------------------`);
+        console.log(this.turnCard);
+        console.log(`-----------------------`);
         return this.turnCard;
     }
     // special card is next rank, suit priority is D,S,H,C
