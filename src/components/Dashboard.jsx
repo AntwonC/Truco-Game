@@ -95,6 +95,7 @@ const Dashboard = () => {
     socket.emit("join-room", roomNumber, user);
 
     socket.on("room-success", () => {
+      
       setJoinedRoom(true);
     });
   };

@@ -16,6 +16,10 @@ class gameLoop {
     teamOneScore = 0;
     teamTwoScore = 0;
 
+    roundValue = 1;
+
+    isTruco = false;
+
     p1Rounds = [-1, -1, -1];
     p2Rounds = [-1, -1, -1];
 
@@ -56,16 +60,16 @@ class gameLoop {
         return this.teamOneScore;
     }
 
-    setTeamOneScore = (score) => {
-        this.teamOneScore = score;
+    setTeamOneScore = (value) => {
+        this.teamOneScore += value;
     }
 
     getTeamTwoScore = () => {
         return this.teamTwoScore;
     }
 
-    setTeamTwoScore = (score) => {
-        this.teamTwoScore = score;
+    setTeamTwoScore = (value) => {
+        this.teamTwoScore += value;
     }
 
     setRounds = (round) => {
@@ -91,6 +95,14 @@ class gameLoop {
 
     setPlayerTwoHand = (hand) => {
         this.playerTwoHand = hand;
+    }
+
+    getRoundValue = () => {
+        return this.roundValue;
+    }
+
+    setRoundValue = (value) => {
+        this.roundValue = value;
     }
 
 
@@ -156,9 +168,11 @@ class gameLoop {
         // start from the "top" which is the end of the array
         let deckCounter = this.deck.length - 1;
         let loopVariable = 3;
+
+        console.log(`LoopVariable in DEAL PLAYER ONE HAND ${loopVariable}`);
         while(loopVariable > 0) {
             const card = this.deck.pop();
-            
+            console.log(`How many times does this loop run? ${loopVariable}`);
             this.playerOneHand.push(card);
             loopVariable--;
         }

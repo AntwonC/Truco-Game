@@ -2,7 +2,7 @@ import { Server } from 'socket.io';
 import { callbackify } from 'util';
 import  gameObject from './dataServer.js';
 import gameLoop from './gameLogic.js';
-import e from 'cors';
+
 import { Collapse } from 'react-bootstrap';
 
 
@@ -30,6 +30,12 @@ const socketServer = (server) => {
 
         socket.on("disconnect", () => {
             console.log("Disconnecting...");
+            socket.removeAllListeners("join-room");
+            socket.removeAllListeners("leave-room");
+            socket.removeAllListeners("start-game");
+            socket.removeAllListeners("turn-play-card");
+            socket.removeAllListeners("reset-next-turn");
+            io.removeAllListeners("connection");
         })
 
         console.log(`socket connected with id: ${socket.id}`);
@@ -72,9 +78,9 @@ const socketServer = (server) => {
         });
 
         socket.on("leave-room", (user, roomNumber) => {
-            console.log(`${socket.id} leaving room ${roomNumber}...`);
+            console.log(`${user} leaving room ${roomNumber}...`);
             socket.leave(roomNumber);
-            console.log(`${socket.id} left!`);
+          //  console.log(`${socket.id} left!`);
             console.log(`${user} is leaving room...`);
 
             // Get user slot
@@ -156,7 +162,10 @@ const socketServer = (server) => {
 
         socket.on("start-game", (playerOne, playerTwo, roomNumber) => {
             const sizeOfGameSession = gamesInSession.length;
+            console.log(`------------------------------`);
+            console.log(`sizeOfGameSession running multiple times, why?`);
             console.log(sizeOfGameSession);
+            console.log(`------------------------------`);
 
             if(sizeOfGameSession > 0) {
                 for(let i = 0; i < sizeOfGameSession; i++) {
@@ -241,8 +250,8 @@ const socketServer = (server) => {
                 }
             }
 
-            console.log('Current game');
-            console.log(currentGame);
+          //  console.log('Current game');
+          //  console.log(currentGame);
 
             const gameBoardSize = currentGame.gameBoard.length;
             const board = currentGame.gameBoard;
@@ -264,9 +273,9 @@ const socketServer = (server) => {
                    const p1RoundsTemp = currentGame.p1Rounds;
 
                    const roundIndex = p1RoundsTemp.findIndex((element) => element === -1);
-                   console.log("-------------------");
+                /*   console.log("-------------------");
                    console.log(roundIndex);
-                   console.log("-------------------");
+                   console.log("-------------------"); */
                    currentGame.p1Rounds[roundIndex] = 0;
 
 
@@ -274,27 +283,27 @@ const socketServer = (server) => {
                     const p2RoundsTemp = currentGame.p2Rounds;
 
                     const roundIndex = p2RoundsTemp.findIndex((element) => element === -1);
-                    console.log("-------------------");
+                 /*   console.log("-------------------");
                     console.log(roundIndex);
-                    console.log("-------------------");
+                    console.log("-------------------"); */
                     currentGame.p2Rounds[roundIndex] = 0;
                 }
 
                 // create a setter function for this..
                 for(let i = 0; i < currentGame.gameBoard.length; i++) {
                     
-                    currentGame.deck.push(currentGame.gameBoard[i]);
+                   // currentGame.deck.push(currentGame.gameBoard[i]);
                     
                 }
 
                 // put turn card back into deck
-                currentGame.deck.push(currentGame.turnCard);
+                //currentGame.deck.push(currentGame.turnCard);
 
                 // should be full deck now...
-                console.log(currentGame.getDeck());
+               // console.log(currentGame.getDeck());
 
                 currentGame.gameBoard = [];
-                io.to(roomNumber).emit("winner-round", roundWinner, currentGame.p1Rounds, currentGame.p2Rounds);
+                io.to(roomNumber).emit("winner-round", roundWinner, currentGame.p1Rounds, currentGame.p2Rounds, currentGame.getPlayerOne(), currentGame.getPlayerTwo());
                 // Idea: [-1, -1, -1] for p1 & p2 rounds won...
                 // Send to front-end
                 // map through the rounds for p1 & p2 then render the circles
@@ -318,10 +327,10 @@ const socketServer = (server) => {
             const p1Hand = currentGame.playerOneHand;
             const p2Hand = currentGame.playerTwoHand; 
             
-             console.log(`----------------------------`);
+           /*  console.log(`----------------------------`);
              console.log(`CurrentGame here`);
             console.log(currentGame);
-            console.log(`----------------------------`);
+            console.log(`----------------------------`); */
             
 
             io.to(roomNumber).emit("turn-completed", currentGame, currentGame.getPlayerOneHand(), currentGame.getPlayerTwoHand(), currentGame.p1Rounds, currentGame.p2Rounds);
@@ -341,45 +350,65 @@ const socketServer = (server) => {
               //  console.log(`----------------------------`);
                 if(gameObject.roomNumber === roomNumber) {
                     currentGame = gameObject;
+                    console.log("inside reset-next-turn")
                     break;
                 }
             }
 
             console.log(`current game in RESET-NEXT-TURN`);
+            console.log(currentGame);
 
             const p1 = currentGame.getPlayerOne();
             const p2 = currentGame.getPlayerTwo();
 
+            console.log(`p1: ${p1}`);
+            console.log(`p2: ${p2}`);
+            console.log(`player: ${player}`);
+
+            const roundValue = currentGame.getRoundValue();
+
             if(p1 === player) {
                 let currentScoreOne = currentGame.getTeamOneScore();
-
-                currentGame.setTeamOneScore(currentScoreOne + 1);
+                console.log(`currentScoreOne: ${currentScoreOne}`);
+                currentGame.setTeamOneScore(roundValue);
+                
+               
                 currentGame.playerTurn = [-1, 0];
             } else if(p2 === player) {
                 let currentScoreTwo = currentGame.getTeamTwoScore();
+                console.log(`currentScoreTwo: ${currentScoreTwo}`);
+                currentGame.setTeamTwoScore(roundValue);
+               
 
-                currentGame.setTeamTwoScore(currentScoreTwo + 1);
-                
                 currentGame.playerTurn = [0, -1];
             }
 
+            
+
+          //  console.log(`----------------------`);
+            currentGame.createDeck();
+          //  console.log(currentGame.deck);
+           // console.log(`----------------------`);
             currentGame.shuffleDeck();
-            console.log(`----------------------`);
-            console.log(currentGame.deck);
-            console.log(`----------------------`);
             // winner goes first..
             currentGame.dealTurnCard(currentGame.getDeck());
             currentGame.dealSpecialCard();
 
+            currentGame.setPlayerOneHand([]);
+            currentGame.setPlayerTwoHand([]);
             currentGame.dealPlayerOne();
             currentGame.dealPlayerTwo();
 
             currentGame.p1Rounds = [-1, -1, -1];
             currentGame.p2Rounds = [-1, -1, -1];
 
+            // Cheap Trick: The event is being called twice because of two clients and 
+            // incrementing twice.. but can have a workaround by just decreasing the value once..?
         
             // io.to(roomNumber).emit("start-game-confirmed", gameSession.deck, gameSession.playerOneHand, gameSession.playerTwoHand, gameSession.getPlayerOne(), gameSession.getPlayerTwo(), gameSession.turnCard, gameSession.specialCard, gameSession);
             io.to(roomNumber).emit("reset-completed", currentGame.getPlayerOneHand(), currentGame.getPlayerTwoHand(), currentGame.turnCard, currentGame.specialCard, currentGame.getTeamOneScore(), currentGame.getTeamTwoScore());
+
+
 
 
         });

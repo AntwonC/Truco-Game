@@ -1,6 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import io from "socket.io-client";
 import App from './App.jsx'
 import SignUp from './components/SignUp.jsx';
 import Login from './components/Login.jsx';
@@ -14,6 +15,7 @@ import './styles/Card.css';
 
 
 //import { socketServer } from './socket.js';
+
 
 const router = createBrowserRouter([
   {

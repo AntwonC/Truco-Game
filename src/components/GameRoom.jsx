@@ -326,7 +326,7 @@ const GameRoom = ({ socket, roomNumber, user }) => {
 
 
 
-    socket.on("update-left-room", (userFromTable, room, userArray, usersInRoom) => {
+    socket.on("user-left-room", (userFromTable, room, userArray, usersInRoom) => {
       console.log(`left-room getting triggered in GameRoom.jsx`);
       
       console.log(`${usersInRoom} in room ${room} now after leaving...`);
@@ -485,7 +485,7 @@ const GameRoom = ({ socket, roomNumber, user }) => {
 
     });
 
-    socket.on("winner-round", (winner, p1RoundsArr, p2RoundsArr) => {
+    socket.on("winner-round", (winner, p1RoundsArr, p2RoundsArr, playerOne, playerTwo) => {
       const winnerUser = winner.turn;
 
       setUserWonRound(winnerUser);
@@ -494,6 +494,13 @@ const GameRoom = ({ socket, roomNumber, user }) => {
       const p1TempArr = p1RoundsArr;
       const p2TempArr = p2RoundsArr;
 
+      if(winnerUser === playerOne) {
+        // increment round for the user...
+        setPlayerOneRound([...p1RoundsArr]);
+      } else if(winnerUser === playerTwo) {
+        setPlayerTwoRound([...p2RoundsArr]);
+      }
+
       // [0, -1, -1]
       // [0, 0, -1]
 
@@ -501,41 +508,39 @@ const GameRoom = ({ socket, roomNumber, user }) => {
       // [0, -1, 0]
 
       let p1Counter = 0;
+      //console.log(`p1Counter: ${p1Counter}`);
 
       for(let i = 0; i < p1TempArr.length; i++) {
         const currentIndex = p1TempArr[i];
-
+        console.log(`p1Counter: ${p1Counter} ${i}`);
         if(p1Counter === 2) {
           // p1 won the turn...reset the state for next turn...
-          console.log(`player 1 won this turn!`);
-          socket.emit("reset-next-turn", p1, roomNumber);
-          
+          console.log(`player 1 won this turn! ${playerOne}`);
+          socket.emit("reset-next-turn", playerOne, roomNumber);
+          return ;
         } else if(currentIndex === 0) {
           p1Counter++;
         }
       }
 
       let p2Counter = 0;
+      //console.log(`p2Counter: ${p2Counter}`);
 
       for(let i = 0; i < p2TempArr.length; i++) {
         const currentIndex = p2TempArr[i];
-
+        console.log(`p2Counter: ${p2Counter} ${i}`);
         if(p2Counter === 2) {
           // p2 won the turn...
-          console.log(`player 2 won this turn!`);
-          socket.emit("reset-next-turn", p2, roomNumber);
+          console.log(`player 2 won this turn! ${playerTwo}`);
+          socket.emit("reset-next-turn", playerTwo, roomNumber);
+          return ;
         } else if(currentIndex === 0) {
           p2Counter++;
         }
       }
 
 
-      if(winnerUser === p1) {
-        // increment round for the user...
-        setPlayerOneRound([...p1RoundsArr]);
-      } else if(winnerUser === p2) {
-        setPlayerTwoRound([...p2RoundsArr]);
-      }
+
     });
 
     socket.on("reset-completed", (p1Hand, p2Hand, turnCard, specialCard, teamOneScore, teamTwoScore) => {
@@ -543,15 +548,25 @@ const GameRoom = ({ socket, roomNumber, user }) => {
       // currentGame.getPlayerTwoHand(), 
       //currentGame.turnCard, currentGame.specialCard, 
       //currentGame.getTeamOneScore(), currentGame.getTeamTwoScore()
+
+      
+    //  const nextHand = p1Hand.map((card => {
+    //    return card;
+    //  }));
+
+      //console.log(nextHand);
       setPlayerOneHand([...p1Hand]);
       setPlayerTwoHand([...p2Hand]);
 
       setTurnCard(turnCard);
       setMahila(specialCard);
 
+      console.log(`teamOneScore: ${teamOneScore}`);
+      console.log(`teamTwoScore: ${teamTwoScore}`);
+
       setTeamOne(teamOneScore);
       setTeamTwo(teamTwoScore);
-      
+
 
     });
 
@@ -601,6 +616,11 @@ const GameRoom = ({ socket, roomNumber, user }) => {
       socket.off("turn-completed");
       socket.off("confirmed-user-on-table");
       socket.off("update-left-room");
+      socket.off("reset-completed");
+      socket.off("turn-completed");
+      socket.off("winner-round");
+      socket.removeListener("reset-completed");
+      socket.removeAllListeners();
     }
 
     /* We want to position the current user's hand in front of them
@@ -612,7 +632,7 @@ const GameRoom = ({ socket, roomNumber, user }) => {
        */
 
 
-  }, [socket, numInRoom])
+  }, [socket])
 
   return (
     <>
