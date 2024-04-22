@@ -24,18 +24,22 @@ const socketServer = (server) => {
     });
 
     io.on("connection", (socket) => {
+
+
+
       /*  socket.on("disconnecting", () => {
             console.log(socket.rooms);
         }); */
 
         socket.on("disconnect", () => {
             console.log("Disconnecting...");
-            socket.removeAllListeners("join-room");
+          /*  socket.removeAllListeners("join-room");
             socket.removeAllListeners("leave-room");
             socket.removeAllListeners("start-game");
             socket.removeAllListeners("turn-play-card");
-            socket.removeAllListeners("reset-next-turn");
-            io.removeAllListeners("connection");
+            socket.removeAllListeners("reset-next-turn"); */
+            
+           
         })
 
         console.log(`socket connected with id: ${socket.id}`);
@@ -47,6 +51,8 @@ const socketServer = (server) => {
            Case 2: somebody is on table, therefore there is at least 1 user
         /*/
         socket.on("join-room", (roomNumber, user) => {
+            console.log("Socket listener count...");
+            console.log(socket.listenerCount("join-room"));
             console.log(`Joining room ${roomNumber}...`);
 
             const userExistsOnTable = object.findUserOnTable(user, roomNumber);
@@ -71,6 +77,7 @@ const socketServer = (server) => {
             //if(usersInRoom > 0) 
             // (userFromServer, room, usersInRoom, userTable)
             // emit to the roomNumber and place bottom user accordingly
+            socket.emit("room-success");
             io.to(roomNumber).emit("room-success", user, roomNumber, numberOfUsersInRoom, usersOnTable);
           //  socket.emit("room-success", user, roomNumber, usersInRoom, usersOnTable);
 
@@ -112,52 +119,10 @@ const socketServer = (server) => {
             // emit the user, userSlot, and roomNumber back
             console.log(`user that wants to leave... ${user}`);
             // current socket emits to user
-            socket.emit("left-room", user, userSlot, roomNumber, object.getUsersOnTable());
+            socket.emit("left-room");
             io.to(roomNumber).emit("user-left-room", user, userSlot, roomNumber, object.getUsersOnTable());
            // io.emit("updated-user-table", user, userSlot, roomNumber, object.getUsersOnTable());
           //  socket.to(roomNumber).emit() // "left-room" changes joinedRoom in <Dashboard />
-        });
-
-        socket.on("user-joined-table-1", (user, roomNumber) => {
-            /*console.log('-----------------------------------');
-            console.log(`Users in this table`);
-            console.log(io.sockets.adapter.rooms.get(roomNumber));
-            console.log('-----------------------------------'); */
-            object.addUserOnTable(user, 1, roomNumber)
-            io.to(roomNumber).emit('user-joined-confirm-1', user, object.getUsersOnTable());
-           // userTable.push({name: user, slot: 1, room: roomNumber});
-            object.getUsersOnTable();
-        });
-
-        socket.on("user-joined-table-2", (user, roomNumber) => {
-            
-            /*console.log('-----------------------------------');
-            console.log(`Users in this table`);
-            console.log(io.sockets.adapter.rooms.get(roomNumber));
-            console.log('-----------------------------------'); */
-            object.addUserOnTable(user, 2, roomNumber)
-            io.to(roomNumber).emit('user-joined-confirm-2', user, object.getUsersOnTable());
-            object.getUsersOnTable();
-           // userTable.push({name: user, slot: 2, room: roomNumber});
-           // console.log(userTable);
-        });
-
-        socket.on("get-users-on-table", () => {
-            console.log(`Getting users from table...`);
-            socket.emit("get-users-table", object.getUsersOnTable());
-           // console.log(userTable);
-           // socket.emit("get-users-table", userTable);
-        })
-
-        socket.on("check-user-joined-table", (user) => {
-          /*  for(let i = 0; i < userTable.length; i++) {
-                const userObject = userTable[i];
-
-                if(userObject.name === user) {
-                    socket.emit("confirmed-user-on-table", user, userTable);
-                }
-            } */
-
         });
 
         socket.on("start-game", (playerOne, playerTwo, roomNumber) => {
@@ -383,12 +348,17 @@ const socketServer = (server) => {
                 currentGame.playerTurn = [0, -1];
             }
 
+            console.log(`Player Turns....`);
+            console.log(currentGame.playerTurn);
+
             
 
           //  console.log(`----------------------`);
             currentGame.createDeck();
           //  console.log(currentGame.deck);
            // console.log(`----------------------`);
+            currentGame.shuffleDeck();
+            currentGame.shuffleDeck();
             currentGame.shuffleDeck();
             // winner goes first..
             currentGame.dealTurnCard(currentGame.getDeck());
@@ -406,12 +376,12 @@ const socketServer = (server) => {
             // incrementing twice.. but can have a workaround by just decreasing the value once..?
         
             // io.to(roomNumber).emit("start-game-confirmed", gameSession.deck, gameSession.playerOneHand, gameSession.playerTwoHand, gameSession.getPlayerOne(), gameSession.getPlayerTwo(), gameSession.turnCard, gameSession.specialCard, gameSession);
-            io.to(roomNumber).emit("reset-completed", currentGame.getPlayerOneHand(), currentGame.getPlayerTwoHand(), currentGame.turnCard, currentGame.specialCard, currentGame.getTeamOneScore(), currentGame.getTeamTwoScore());
+            io.to(roomNumber).emit("reset-completed", currentGame.getPlayerOneHand(), currentGame.getPlayerTwoHand(), currentGame.turnCard, currentGame.specialCard, currentGame.getTeamOneScore(), currentGame.getTeamTwoScore(), currentGame.playerTurn);
 
 
 
 
-        });
+        }); 
 
         
     });
