@@ -13,6 +13,7 @@ console.log(object.getUsersOnTable());
 
 let gamesInSession = [];
 
+let count = 0;
 
 const socketServer = (server) => {
     
@@ -33,11 +34,11 @@ const socketServer = (server) => {
 
         socket.on("disconnect", () => {
             console.log("Disconnecting...");
-          /*  socket.removeAllListeners("join-room");
+            socket.removeAllListeners("join-room");
             socket.removeAllListeners("leave-room");
             socket.removeAllListeners("start-game");
             socket.removeAllListeners("turn-play-card");
-            socket.removeAllListeners("reset-next-turn"); */
+            socket.removeAllListeners("reset-next-turn"); 
             
            
         })
@@ -242,6 +243,7 @@ const socketServer = (server) => {
                    console.log(roundIndex);
                    console.log("-------------------"); */
                    currentGame.p1Rounds[roundIndex] = 0;
+                   currentGame.playerTurn = [-1, 0];
 
 
                 } else if(winningPlayer === playerTwo) {
@@ -252,6 +254,7 @@ const socketServer = (server) => {
                     console.log(roundIndex);
                     console.log("-------------------"); */
                     currentGame.p2Rounds[roundIndex] = 0;
+                    currentGame.playerTurn = [0, -1];
                 }
 
                 // create a setter function for this..
@@ -268,7 +271,9 @@ const socketServer = (server) => {
                // console.log(currentGame.getDeck());
 
                 currentGame.gameBoard = [];
-                io.to(roomNumber).emit("winner-round", roundWinner, currentGame.p1Rounds, currentGame.p2Rounds, currentGame.getPlayerOne(), currentGame.getPlayerTwo());
+                io.to(roomNumber).emit("winner-round", roundWinner, currentGame.p1Rounds, currentGame.p2Rounds, currentGame.getPlayerOne(), currentGame.getPlayerTwo(), currentGame.playerTurn);
+                io.to(roomNumber).emit("turn-completed", currentGame, currentGame.getPlayerOneHand(), currentGame.getPlayerTwoHand(), currentGame.p1Rounds, currentGame.p2Rounds);
+                return;
                 // Idea: [-1, -1, -1] for p1 & p2 rounds won...
                 // Send to front-end
                 // map through the rounds for p1 & p2 then render the circles
@@ -303,6 +308,15 @@ const socketServer = (server) => {
         });
 
         socket.on("reset-next-turn", (player, roomNumber) => {
+            // hacky way of fixing the problem of it being called multiple times? 
+            // Could it possibly work with more players or will it introduce more bugs?
+            if(count > 0) {
+                count = 0;
+                return ;
+            }
+            count++;
+
+            console.log(`count: ${count}`);
             const sizeOfGameSession = gamesInSession.length;
             let currentGame = {};
             console.log(`sizeOfGameSession: ${sizeOfGameSession}`);
@@ -319,6 +333,8 @@ const socketServer = (server) => {
                     break;
                 }
             }
+
+
 
             console.log(`current game in RESET-NEXT-TURN`);
             console.log(currentGame);
@@ -351,6 +367,44 @@ const socketServer = (server) => {
             console.log(`Player Turns....`);
             console.log(currentGame.playerTurn);
 
+            console.log(currentGame.getTeamOneScore());
+            console.log(currentGame.getTeamTwoScore());
+
+            // Check if the game limit has been reached
+            const checkGameWinner = currentGame.checkReachedScoreLimit();
+            console.log(`checkGameWinner: ${checkGameWinner}`);
+            if(checkGameWinner === 1) { // team 1 won
+                // delete the game from the server state
+                for(let i = 0; i < sizeOfGameSession; i++) {
+                    const gameObject = gamesInSession[i];
+                   // console.log(`----------------------------`);
+                   // console.log(`GameObject here`);
+                  //  console.log(gameObject);
+                  //  console.log(`----------------------------`);
+                    if(gameObject.roomNumber === roomNumber) {
+                        gamesInSession = gamesInSession.toSpliced(i, 1);
+                    }
+                }
+                io.to(roomNumber).emit("game-winner", 1);
+                return;
+            } else if(checkGameWinner === 2) { // team 2 won
+                // delete the game from the server state
+                for(let i = 0; i < sizeOfGameSession; i++) {
+                    const gameObject = gamesInSession[i];
+                   // console.log(`----------------------------`);
+                   // console.log(`GameObject here`);
+                  //  console.log(gameObject);
+                  //  console.log(`----------------------------`);
+                    if(gameObject.roomNumber === roomNumber) {
+                        gamesInSession = gamesInSession.toSpliced(i, 1);
+                    }
+                }
+                io.to(roomNumber).emit("game-winner", 2);
+                return;
+            } else if(checkGameWinner === 0) { // nobody won yet
+                // continue;
+            }
+
             
 
           //  console.log(`----------------------`);
@@ -377,7 +431,8 @@ const socketServer = (server) => {
         
             // io.to(roomNumber).emit("start-game-confirmed", gameSession.deck, gameSession.playerOneHand, gameSession.playerTwoHand, gameSession.getPlayerOne(), gameSession.getPlayerTwo(), gameSession.turnCard, gameSession.specialCard, gameSession);
             io.to(roomNumber).emit("reset-completed", currentGame.getPlayerOneHand(), currentGame.getPlayerTwoHand(), currentGame.turnCard, currentGame.specialCard, currentGame.getTeamOneScore(), currentGame.getTeamTwoScore(), currentGame.playerTurn);
-
+           // io.emit("reset-completed", currentGame.getPlayerOneHand(), currentGame.getPlayerTwoHand(), currentGame.turnCard, currentGame.specialCard, currentGame.getTeamOneScore(), currentGame.getTeamTwoScore(), currentGame.playerTurn);
+            
 
 
 

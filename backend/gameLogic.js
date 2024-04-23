@@ -1,6 +1,8 @@
+
 const SUITS = ["C", "H", "S", "D"];
 const RANKS = ["2", "3", "4", "5", "6", "7", "J", "Q", "K", "A"];
 const SCALE = ["3", "2", "A", "K", "J", "Q", "7", "6", "5", "4"];
+const WINNING_SCORE = 3;
 
 class gameLoop {
     deck = [];
@@ -294,6 +296,22 @@ class gameLoop {
         // in event of a tie return a fake card
         const fakeTieCard = {user: "tie", rank: cardOne.rank};
         return fakeTieCard;
+    }
+
+    checkReachedScoreLimit = () => {
+        const teamOne = this.teamOneScore;
+        const teamTwo = this.teamTwoScore;
+
+        // For some reason, the server is behind by 1 hand...
+
+        if(teamOne === WINNING_SCORE) {
+            // return a value to indicate we have a "winner"
+            return 1;
+        } else if (teamTwo === WINNING_SCORE) {
+            return 2;
+        }
+
+        return 0;
     }
 
 
