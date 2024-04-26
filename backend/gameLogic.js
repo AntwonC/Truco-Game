@@ -107,6 +107,10 @@ class gameLoop {
         this.roundValue = value;
     }
 
+    setTrucoRound = (truthy) => {
+        this.isTruco = truthy;
+    }
+
 
 
     createDeck = () => {
@@ -304,15 +308,17 @@ class gameLoop {
 
         // For some reason, the server is behind by 1 hand...
 
-        if(teamOne === WINNING_SCORE) {
+        if(teamOne >= WINNING_SCORE) {
             // return a value to indicate we have a "winner"
             return 1;
-        } else if (teamTwo === WINNING_SCORE) {
+        } else if (teamTwo >= WINNING_SCORE) {
             return 2;
         }
 
         return 0;
     }
+
+
 
 
 }

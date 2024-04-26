@@ -438,6 +438,52 @@ const socketServer = (server) => {
 
         }); 
 
+        socket.on("truco-clicked", (roomNumber, acceptTruco, declineTruco) => {
+           const trucoValue = 3;
+
+           if(acceptTruco) {
+               const sizeOfGameSession = gamesInSession.length;
+               let currentGame = {};
+               console.log(`sizeOfGameSession: ${sizeOfGameSession}`);
+    
+               for(let i = 0; i < sizeOfGameSession; i++) {
+                   const gameObject = gamesInSession[i];
+                  // console.log(`----------------------------`);
+                  // console.log(`GameObject here`);
+                 //  console.log(gameObject);
+                 //  console.log(`----------------------------`);
+                   if(gameObject.roomNumber === roomNumber) {
+                       currentGame = gameObject;       
+                       break;
+                   }
+               }
+    
+               console.log(currentGame);
+    
+               currentGame.setRoundValue(trucoValue); // change the value for this round
+               currentGame.setTrucoRound(true);
+               //currentGame.set
+    
+               // notify the other player of the Truco call
+               socket.to(roomNumber).emit("truco-called", currentGame.getRoundValue());
+               io.to(roomNumber).emit("truco-called", currentGame.getRoundValue());
+               return;
+           }
+
+
+           
+           socket.to(roomNumber).emit("truco-called", 1);
+           
+           
+            
+
+
+        });
+
+        socket.on("truco-accepted", (player, roomNumber) => {
+
+        });
+
         
     });
     
