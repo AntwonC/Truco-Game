@@ -221,66 +221,69 @@ const socketServer = (server) => {
 
             const gameBoardSize = currentGame.gameBoard.length;
             const board = currentGame.gameBoard;
-
-            if(gameBoardSize === 2) {
-                const roundWinner = currentGame.checkWinnerRound(board);
-                // need to implement special card taking into effect, but
-                // first get turn working properly
-
-                // put the cards from gameboard back into deck.. reshuffle..
-                console.log(`RoundWinner....`)
-                console.log(roundWinner);
-
-                const winningPlayer = roundWinner.turn;
-                const playerOne = currentGame.getPlayerOne();
-                const playerTwo = currentGame.getPlayerTwo();
-
-                if(winningPlayer === playerOne) {
-                   const p1RoundsTemp = currentGame.p1Rounds;
-
-                   const roundIndex = p1RoundsTemp.findIndex((element) => element === -1);
-                /*   console.log("-------------------");
-                   console.log(roundIndex);
-                   console.log("-------------------"); */
-                   currentGame.p1Rounds[roundIndex] = 0;
-                   currentGame.playerTurn = [-1, 0];
-
-
-                } else if(winningPlayer === playerTwo) {
-                    const p2RoundsTemp = currentGame.p2Rounds;
-
-                    const roundIndex = p2RoundsTemp.findIndex((element) => element === -1);
-                 /*   console.log("-------------------");
-                    console.log(roundIndex);
-                    console.log("-------------------"); */
-                    currentGame.p2Rounds[roundIndex] = 0;
-                    currentGame.playerTurn = [0, -1];
+            // 3 seconds wait so the players can see the cards
+            setTimeout(() => {
+                if(gameBoardSize === 2) {
+                    const roundWinner = currentGame.checkWinnerRound(board);
+                    // need to implement special card taking into effect, but
+                    // first get turn working properly
+    
+                    // put the cards from gameboard back into deck.. reshuffle..
+                    console.log(`RoundWinner....`)
+                    console.log(roundWinner);
+    
+                    const winningPlayer = roundWinner.turn;
+                    const playerOne = currentGame.getPlayerOne();
+                    const playerTwo = currentGame.getPlayerTwo();
+    
+                    if(winningPlayer === playerOne) {
+                       const p1RoundsTemp = currentGame.p1Rounds;
+    
+                       const roundIndex = p1RoundsTemp.findIndex((element) => element === -1);
+                    /*   console.log("-------------------");
+                       console.log(roundIndex);
+                       console.log("-------------------"); */
+                       currentGame.p1Rounds[roundIndex] = 0;
+                       currentGame.playerTurn = [-1, 0];
+    
+    
+                    } else if(winningPlayer === playerTwo) {
+                        const p2RoundsTemp = currentGame.p2Rounds;
+    
+                        const roundIndex = p2RoundsTemp.findIndex((element) => element === -1);
+                     /*   console.log("-------------------");
+                        console.log(roundIndex);
+                        console.log("-------------------"); */
+                        currentGame.p2Rounds[roundIndex] = 0;
+                        currentGame.playerTurn = [0, -1];
+                    }
+    
+                    // create a setter function for this..
+                    for(let i = 0; i < currentGame.gameBoard.length; i++) {
+                        
+                       // currentGame.deck.push(currentGame.gameBoard[i]);
+                        
+                    }
+    
+                    // put turn card back into deck
+                    //currentGame.deck.push(currentGame.turnCard);
+    
+                    // should be full deck now...
+                   // console.log(currentGame.getDeck());
+    
+                    currentGame.gameBoard = [];
+                    io.to(roomNumber).emit("winner-round", roundWinner, currentGame.p1Rounds, currentGame.p2Rounds, currentGame.getPlayerOne(), currentGame.getPlayerTwo(), currentGame.playerTurn);
+                    io.to(roomNumber).emit("turn-completed", currentGame, currentGame.getPlayerOneHand(), currentGame.getPlayerTwoHand(), currentGame.p1Rounds, currentGame.p2Rounds);
+                    return;
+                    // Idea: [-1, -1, -1] for p1 & p2 rounds won...
+                    // Send to front-end
+                    // map through the rounds for p1 & p2 then render the circles
+                    // -1 -> white, 0 -> green
+                    // use css to change the colors?
+    
                 }
 
-                // create a setter function for this..
-                for(let i = 0; i < currentGame.gameBoard.length; i++) {
-                    
-                   // currentGame.deck.push(currentGame.gameBoard[i]);
-                    
-                }
-
-                // put turn card back into deck
-                //currentGame.deck.push(currentGame.turnCard);
-
-                // should be full deck now...
-               // console.log(currentGame.getDeck());
-
-                currentGame.gameBoard = [];
-                io.to(roomNumber).emit("winner-round", roundWinner, currentGame.p1Rounds, currentGame.p2Rounds, currentGame.getPlayerOne(), currentGame.getPlayerTwo(), currentGame.playerTurn);
-                io.to(roomNumber).emit("turn-completed", currentGame, currentGame.getPlayerOneHand(), currentGame.getPlayerTwoHand(), currentGame.p1Rounds, currentGame.p2Rounds);
-                return;
-                // Idea: [-1, -1, -1] for p1 & p2 rounds won...
-                // Send to front-end
-                // map through the rounds for p1 & p2 then render the circles
-                // -1 -> white, 0 -> green
-                // use css to change the colors?
-
-            }
+            }, 3000);
 
         //    console.log(currentGame['playerOneHand']);
 
@@ -303,7 +306,9 @@ const socketServer = (server) => {
             console.log(`----------------------------`); */
             
 
+            
             io.to(roomNumber).emit("turn-completed", currentGame, currentGame.getPlayerOneHand(), currentGame.getPlayerTwoHand(), currentGame.p1Rounds, currentGame.p2Rounds);
+            
 
         });
 
@@ -438,25 +443,26 @@ const socketServer = (server) => {
 
         }); 
 
-        socket.on("truco-clicked", (roomNumber, acceptTruco, declineTruco) => {
+        socket.on("truco-clicked", (player, roomNumber, acceptTruco, declineTruco) => {
            const trucoValue = 3;
 
-           if(acceptTruco) {
-               const sizeOfGameSession = gamesInSession.length;
-               let currentGame = {};
-               console.log(`sizeOfGameSession: ${sizeOfGameSession}`);
-    
-               for(let i = 0; i < sizeOfGameSession; i++) {
-                   const gameObject = gamesInSession[i];
-                  // console.log(`----------------------------`);
-                  // console.log(`GameObject here`);
-                 //  console.log(gameObject);
-                 //  console.log(`----------------------------`);
-                   if(gameObject.roomNumber === roomNumber) {
-                       currentGame = gameObject;       
-                       break;
-                   }
+           const sizeOfGameSession = gamesInSession.length;
+           let currentGame = {};
+           console.log(`sizeOfGameSession: ${sizeOfGameSession}`);
+
+           for(let i = 0; i < sizeOfGameSession; i++) {
+               const gameObject = gamesInSession[i];
+              // console.log(`----------------------------`);
+              // console.log(`GameObject here`);
+             //  console.log(gameObject);
+             //  console.log(`----------------------------`);
+               if(gameObject.roomNumber === roomNumber) {
+                   currentGame = gameObject;       
+                   break;
                }
+           }
+
+           if(acceptTruco) {
     
                console.log(currentGame);
     
@@ -465,17 +471,75 @@ const socketServer = (server) => {
                //currentGame.set
     
                // notify the other player of the Truco call
-               socket.to(roomNumber).emit("truco-called", currentGame.getRoundValue());
-               io.to(roomNumber).emit("truco-called", currentGame.getRoundValue());
+               socket.to(roomNumber).emit("truco-called", currentGame.getRoundValue(), currentGame.getTrucoRound());
+               io.to(roomNumber).emit("truco-called", currentGame.getRoundValue(), currentGame.getTrucoRound());
+               
                return;
+           } else if(declineTruco) {
+                // reset the board and give the other team the point
+                currentGame.setTrucoRound(false);
+
+                console.log(`player: ${player}`);
+
+
+                const p1 = currentGame.getPlayerOne();
+                const p2 = currentGame.getPlayerTwo();
+
+                
+                if(player === p1) { // increment the score for team 2
+                    const roundVal = currentGame.getRoundValue();
+                    currentGame.setTeamTwoScore(roundVal);
+                    currentGame.playerTurn = [0, -1];
+                } else if(player === p2) { // increment the score for team 1
+                    const roundVal = currentGame.getRoundValue();
+                    currentGame.setTeamOneScore(roundVal);
+                    currentGame.playerTurn = [-1, 0];
+                }
+
+                currentGame.createDeck();
+
+                currentGame.shuffleDeck();
+                currentGame.shuffleDeck();
+                currentGame.shuffleDeck();
+                  
+                // winner goes first..
+                currentGame.dealTurnCard(currentGame.getDeck());
+                currentGame.dealSpecialCard();
+      
+                currentGame.setPlayerOneHand([]);
+                currentGame.setPlayerTwoHand([]);
+
+                currentGame.dealPlayerOne();
+                currentGame.dealPlayerTwo();
+      
+                currentGame.p1Rounds = [-1, -1, -1];
+                currentGame.p2Rounds = [-1, -1, -1]; 
+
+                
+                io.to(roomNumber).emit("truco-declined", 
+                currentGame.getPlayerOneHand(), 
+                currentGame.getPlayerTwoHand(),
+                currentGame.turnCard,
+                currentGame.specialCard,
+                currentGame.getTeamOneScore(),
+                currentGame.getTeamTwoScore(),
+                currentGame.playerTurn
+                );
+               // io.to(roomNumber).emit("truco-called", 1, false);
+                return;
            }
 
-
+           io.to(roomNumber).emit("truco-called", -1, false);
            
-           socket.to(roomNumber).emit("truco-called", 1);
-           
-           
-            
+           /*io.to(roomNumber).emit("reset-completed", 
+           currentGame.getPlayerOneHand(), 
+           currentGame.getPlayerTwoHand(), 
+           currentGame.turnCard, 
+           currentGame.specialCard, 
+           currentGame.getTeamOneScore(), 
+           currentGame.getTeamTwoScore(), 
+           currentGame.playerTurn);
+           */
 
 
         });

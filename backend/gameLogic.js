@@ -107,6 +107,10 @@ class gameLoop {
         this.roundValue = value;
     }
 
+    getTrucoRound = () => {
+        return this.isTruco;
+    }
+
     setTrucoRound = (truthy) => {
         this.isTruco = truthy;
     }
