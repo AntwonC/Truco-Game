@@ -485,7 +485,7 @@ const socketServer = (server) => {
                 const p1 = currentGame.getPlayerOne();
                 const p2 = currentGame.getPlayerTwo();
 
-                
+
                 if(player === p1) { // increment the score for team 2
                     const roundVal = currentGame.getRoundValue();
                     currentGame.setTeamTwoScore(roundVal);
@@ -495,6 +495,36 @@ const socketServer = (server) => {
                     currentGame.setTeamOneScore(roundVal);
                     currentGame.playerTurn = [-1, 0];
                 }
+
+                // Check if the game limit has been reached
+                const checkGameWinner = currentGame.checkReachedScoreLimit();
+                console.log(`checkGameWinner: ${checkGameWinner}`);
+                if(checkGameWinner === 1) { // team 1 won
+                    // delete the game from the server state
+                    for(let i = 0; i < sizeOfGameSession; i++) {
+                        const gameObject = gamesInSession[i];
+
+                        if(gameObject.roomNumber === roomNumber) {
+                            gamesInSession = gamesInSession.toSpliced(i, 1);
+                        }
+                    }
+                    io.to(roomNumber).emit("game-winner", 1);
+                    return;
+                } else if(checkGameWinner === 2) { // team 2 won
+                    // delete the game from the server state
+                    for(let i = 0; i < sizeOfGameSession; i++) {
+                        const gameObject = gamesInSession[i];
+
+                        if(gameObject.roomNumber === roomNumber) {
+                            gamesInSession = gamesInSession.toSpliced(i, 1);
+                        }
+                    }
+                    io.to(roomNumber).emit("game-winner", 2);
+                    return;
+            } else if(checkGameWinner === 0) { // nobody won yet
+                // continue;
+            }
+                
 
                 currentGame.createDeck();
 
@@ -517,13 +547,13 @@ const socketServer = (server) => {
 
                 
                 io.to(roomNumber).emit("truco-declined", 
-                currentGame.getPlayerOneHand(), 
-                currentGame.getPlayerTwoHand(),
-                currentGame.turnCard,
-                currentGame.specialCard,
-                currentGame.getTeamOneScore(),
-                currentGame.getTeamTwoScore(),
-                currentGame.playerTurn
+                    currentGame.getPlayerOneHand(), 
+                    currentGame.getPlayerTwoHand(),
+                    currentGame.turnCard,
+                    currentGame.specialCard,
+                    currentGame.getTeamOneScore(),
+                    currentGame.getTeamTwoScore(),
+                    currentGame.playerTurn
                 );
                // io.to(roomNumber).emit("truco-called", 1, false);
                 return;

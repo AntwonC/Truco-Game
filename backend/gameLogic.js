@@ -2,6 +2,8 @@
 const SUITS = ["C", "H", "S", "D"];
 const RANKS = ["2", "3", "4", "5", "6", "7", "J", "Q", "K", "A"];
 const SCALE = ["3", "2", "A", "K", "J", "Q", "7", "6", "5", "4"];
+const SUITSCALE = ["D", "S", "H", "C"];
+
 const WINNING_SCORE = 3;
 
 class gameLoop {
@@ -264,18 +266,55 @@ class gameLoop {
     // card1 index is lower than card2 index -> card2 is greater
     // tie 
     // parameters are of type "string", compare 
-    compareCardsRank = (cardOneRank, cardTwoRank) => {
+    // implement using the special card
+    compareCardsRank = (cardOneRank, cardTwoRank, cardOneSuit, cardTwoSuit) => {
+        const currentSpecialCardRank = this.specialCard.rank;
+        const currentSpecialCardSuit = this.specialCard.suit;
         // tie
-        if(cardOneRank === cardTwoRank) {
+        if(cardOneRank === cardTwoRank && cardOneRank !== currentSpecialCardRank && cardTwoRank !== currentSpecialCardRank) {
             return -1;
         }
 
-        const findCardRank1 = (element) => element === cardOneRank;
-        const findCardRank2 = (element) => element === cardTwoRank;
 
+        // somebody has the special card.... compare only with OTHER special cards else automatically win round
+        if(cardOneRank === currentSpecialCardRank && cardOneRank !== currentSpecialCardRank) {
+            const findCardRankSpecial = (element) => element === cardOneRank;
+
+            const cardOneSpecialIndex = SCALE.findIndex(findCardRankSpecial);
+
+            return SCALE[cardOneSpecialIndex];
+
+        } else if(cardTwoRank === currentSpecialCardRank && cardOneRank !== currentSpecialCardRank) {
+            const findCardRankSpecial = (element) => element === cardTwoRank;
+
+            const cardTwoSpecialIndex = SCALE.findIndex(findCardRankSpecial);
+
+            return SCALE[cardTwoSpecialIndex];
+        } else if(cardOneRank === currentSpecialCardRank && cardTwoRank === currentSpecialCardRank) { // both special cards, compare the suits
+            // [D, S, H, C] <---> lowest to highest
+            const findCardSuit1 = (suit) => suit === cardOneSuit;
+            const findCardSuit2 = (suit) => suit === cardTwoSuit;
+
+            const cardOneSuitIndex = SUITSCALE.findIndex(findCardSuit1);
+            const cardTwoSuitIndex = SUITSCALE.findIndex(findCardSuit2);
+
+            const suitRes = Math.max(cardOneSuitIndex, cardTwoSuitIndex);
+
+            if(suitRes === cardOneSuit) {
+                return cardOneRank;
+            } else if(suitRes === cardTwoSuit) {
+                return cardTwoRank;
+            }
+
+
+        }
+        // returns the element of cardOneRank and cardTwoRank
+        const findCardRank1 = (element) => element === cardOneRank; 
+        const findCardRank2 = (element) => element === cardTwoRank;
+        // findIndex to get the index of card in SCALE
         const cardOneIndex = SCALE.findIndex(findCardRank1);
         const cardTwoIndex = SCALE.findIndex(findCardRank2);
-
+        // determines winner by which is closest to zero
         const res = Math.min(cardOneIndex, cardTwoIndex);
 
         return SCALE[res];
@@ -293,7 +332,8 @@ class gameLoop {
         console.log(cardOne);
         console.log(cardTwo)
 
-        const cardWinner = this.compareCardsRank(cardOne.rank, cardTwo.rank);
+        // returns an int which is either card1 or card2..
+        const cardWinner = this.compareCardsRank(cardOne.rank, cardTwo.rank, cardOne.suit, cardTwo.suit);
 
         if(cardWinner === cardOne.rank) {
             return cardOne;
