@@ -221,6 +221,8 @@ const socketServer = (server) => {
 
             const gameBoardSize = currentGame.gameBoard.length;
             const board = currentGame.gameBoard;
+
+            //io.to(roomNumber).emit("waiting-game-board");
             // 3 seconds wait so the players can see the cards
             setTimeout(() => {
                 if(gameBoardSize === 2) {
@@ -256,6 +258,30 @@ const socketServer = (server) => {
                         console.log("-------------------"); */
                         currentGame.p2Rounds[roundIndex] = 0;
                         currentGame.playerTurn = [0, -1];
+                    } else if(winningPlayer === 'tie') {
+                        console.log("This is a tie!");
+                        // person who last played the tie card will go first
+                        // give both players a win for the round
+                        const p1RoundsTemp = currentGame.p1Rounds;
+                        const p2RoundsTemp = currentGame.p2Rounds;
+    
+                        const roundIndex1 = p1RoundsTemp.findIndex((element) => element === -1);
+                        const roundIndex2 = p2RoundsTemp.findIndex((element) => element === -1);
+                        
+                        currentGame.p1Rounds[roundIndex1] = 0;
+                        currentGame.p2Rounds[roundIndex2] = 0;
+
+                        const lastPlayerTurn = currentGame.playerTurn;
+
+                        if(lastPlayerTurn[0] === 0 && lastPlayerTurn[1] === -1) { // player two turn
+                            currentGame.playerTurn = [-1, 0];
+                        } else if(lastPlayerTurn[0] === -1 && lastPlayerTurn[1] === 0) { // player one turn
+                            currentGame.playerTurn = [0, -1];
+                        }
+                        console.log("Tie:");
+                        console.log(currentGame.playerTurn);
+                        
+
                     }
     
                     // create a setter function for this..
@@ -272,6 +298,8 @@ const socketServer = (server) => {
                    // console.log(currentGame.getDeck());
     
                     currentGame.gameBoard = [];
+                    // possible bug where the ref doesn't update and now the player is stuck unable to click cards...
+                    io.to(roomNumber).emit("waiting-game-board-finished"); // send a request to change waiting (ref)
                     io.to(roomNumber).emit("winner-round", roundWinner, currentGame.p1Rounds, currentGame.p2Rounds, currentGame.getPlayerOne(), currentGame.getPlayerTwo(), currentGame.playerTurn);
                     io.to(roomNumber).emit("turn-completed", currentGame, currentGame.getPlayerOneHand(), currentGame.getPlayerTwoHand(), currentGame.p1Rounds, currentGame.p2Rounds);
                     return;
@@ -375,6 +403,8 @@ const socketServer = (server) => {
             console.log(currentGame.getTeamOneScore());
             console.log(currentGame.getTeamTwoScore());
 
+            // NOTE: When both players play cards that result in tie for 2 rounds.. give both players +1 score
+            // can ONLY use 3 clowns if you have 3 cards
             // Check if the game limit has been reached
             const checkGameWinner = currentGame.checkReachedScoreLimit();
             console.log(`checkGameWinner: ${checkGameWinner}`);
@@ -574,9 +604,50 @@ const socketServer = (server) => {
 
         });
 
-        socket.on("truco-accepted", (player, roomNumber) => {
+        socket.on("3-clowns-clicked", (player, roomNumber, acceptTruco, declineTruco) => {
+            const sizeOfGameSession = gamesInSession.length;
+            let currentGame = {};
+            console.log(`sizeOfGameSession: ${sizeOfGameSession}`);
+ 
+            for(let i = 0; i < sizeOfGameSession; i++) {
+                const gameObject = gamesInSession[i];
+               // console.log(`----------------------------`);
+               // console.log(`GameObject here`);
+              //  console.log(gameObject);
+              //  console.log(`----------------------------`);
+                if(gameObject.roomNumber === roomNumber) {
+                    currentGame = gameObject;       
+                    break;
+                }
+            }
 
+            if(acceptTruco) {
+                // other player thinks the player has 3 clowns
+                // if other player gets it correct, +1 point else -1 point
+                // 
+                console.log("3 CLOWNS!");
+                console.log(`player that accepted it.... ${player}`);
+
+                const p1 = currentGame.getPlayerOne();
+                const p2 = currentGame.getPlayerTwo();
+
+                // want the other player to reveal the hand...
+                if(p1 === player) {
+                    io.to(roomNumber).emit("clowns-called", 1); 
+                    return;
+                } else if(p2 === player) {
+                    // reveal p1 hand...
+                    io.to(roomNumber).emit("clowns-called", 1); // 1 -> reveal hand to ALL players
+                    return;
+                }
+
+
+
+            }
+
+            io.to(roomNumber).emit("clowns-called", -1);
         });
+
 
         
     });

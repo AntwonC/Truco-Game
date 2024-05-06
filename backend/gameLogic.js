@@ -342,7 +342,7 @@ class gameLoop {
         }
 
         // in event of a tie return a fake card
-        const fakeTieCard = {user: "tie", rank: cardOne.rank};
+        const fakeTieCard = {turn: "tie", rank: cardOne.rank};
         return fakeTieCard;
     }
 
