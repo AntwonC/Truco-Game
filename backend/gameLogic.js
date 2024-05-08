@@ -362,6 +362,23 @@ class gameLoop {
         return 0;
     }
 
+    checkForThreeClowns = (playerHand) => {
+        let countClowns = 0;
+        for(let i = 0; i < playerHand.length; i++) {
+            const card = playerHand[i];
+            // checking for clowns
+            if(card.rank === "J" || card.rank === "Q" || card.rank === "K" || card.rank === "A") {
+                countClowns++;
+            }
+        }
+
+        if(countClowns === 3) { // player does have clowns..
+            return true;
+        } 
+
+        return false;
+    }
+
 
 
 

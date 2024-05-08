@@ -632,17 +632,75 @@ const socketServer = (server) => {
                 const p2 = currentGame.getPlayerTwo();
 
                 // want the other player to reveal the hand...
+                // check the player hand for the clowns...
                 if(p1 === player) {
-                    io.to(roomNumber).emit("clowns-called", 1); 
+                    const playerOneHand = currentGame.getPlayerOneHand();
+
+                    const clownsResult = currentGame.checkForThreeClowns(playerOneHand);
+                    
+                    console.log(`clownsResult: ${clownsResult}`);
+                    if(clownsResult) { // give point to other player
+                        currentGame.setTeamTwoScore(1);
+                        const teamOneScore = currentGame.getTeamOneScore();
+                        const teamTwoScore = currentGame.getTeamTwoScore();
+                        
+                        io.to(roomNumber).emit("clowns-called", -2, p1, teamOneScore, teamTwoScore);
+                        return;
+                    }
+                    
+                    io.to(roomNumber).emit("clowns-called", 1, p1); 
                     return;
                 } else if(p2 === player) {
+                    const playerTwoHand = currentGame.getPlayerTwoHand();
+                    
+                    const clownsResult = currentGame.checkForThreeClowns(playerTwoHand);
+                    
+                    console.log(`clownsResult: ${clownsResult}`);
+                    if(clownsResult) { // give point to other player
+                        currentGame.setTeamOneScore(1);
+                        const teamOneScore = currentGame.getTeamOneScore();
+                        const teamTwoScore = currentGame.getTeamTwoScore();
+                        io.to(roomNumber).emit("clowns-called", -3, p2, teamOneScore, teamTwoScore);
+                        return;
+                    }
+
                     // reveal p1 hand...
-                    io.to(roomNumber).emit("clowns-called", 1); // 1 -> reveal hand to ALL players
+                    io.to(roomNumber).emit("clowns-called", 2, p2); // 1 -> reveal hand to ALL players
                     return;
                 }
 
 
 
+            } else if(declineTruco) {
+                // Other Player declines 3 Clowns... give the player that called 3-Clowns a re-draw
+                console.log("3 CLOWNS!");
+                console.log(`player that declined it.... ${player}`);
+
+                const p1 = currentGame.getPlayerOne();
+                const p2 = currentGame.getPlayerTwo();
+
+                if(p1 === player) { // p2 gets the re-draw
+                    currentGame.setPlayerTwoHand([]);
+                    currentGame.dealPlayerTwo();
+
+                    const teamOneScore = currentGame.getTeamOneScore();
+                    const teamTwoScore = currentGame.getTeamTwoScore();
+                    const p2Hand = currentGame.getPlayerTwoHand();
+
+                    io.to(roomNumber).emit("clowns-called", -4, p2, teamOneScore, teamTwoScore, p2Hand);
+                    return;
+
+                } else if(p2 === player) {
+                    currentGame.setPlayerOneHand([]);
+                    currentGame.dealPlayerOne();
+
+                    const teamOneScore = currentGame.getTeamOneScore();
+                    const teamTwoScore = currentGame.getTeamTwoScore();
+                    const p1Hand = currentGame.getPlayerOneHand();
+
+                    io.to(roomNumber).emit("clowns-called", -5, p1, teamOneScore, teamTwoScore, p1Hand);
+                    return;
+                }
             }
 
             io.to(roomNumber).emit("clowns-called", -1);
