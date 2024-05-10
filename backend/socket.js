@@ -278,18 +278,41 @@ const socketServer = (server) => {
                         } else if(lastPlayerTurn[0] === -1 && lastPlayerTurn[1] === 0) { // player one turn
                             currentGame.playerTurn = [0, -1];
                         }
+
+
                         console.log("Tie:");
                         console.log(currentGame.playerTurn);
                         
+                        const p1RoundsTempUpdated = currentGame.p1Rounds;
+                        const p2RoundsTempUpdated = currentGame.p2Rounds;
 
+                        let countRounds1 = 0;
+                        let countRounds2 = 0;
+
+
+                        for(let i = 0; i < 3; i++) {
+                            const element = p1RoundsTempUpdated[i];
+
+                            if(element === 0) {
+                                countRounds1++;
+                            }
+                        }
+
+                        for(let i = 0 ; i < 3; i++) {
+                            const element = p2RoundsTempUpdated[i];
+
+                            if(element === 0) {
+                                countRounds2++;
+                            }
+                        }
+
+                        if(countRounds1 === countRounds2) {
+
+                        }
+
+                        
                     }
     
-                    // create a setter function for this..
-                    for(let i = 0; i < currentGame.gameBoard.length; i++) {
-                        
-                       // currentGame.deck.push(currentGame.gameBoard[i]);
-                        
-                    }
     
                     // put turn card back into deck
                     //currentGame.deck.push(currentGame.turnCard);
@@ -356,18 +379,13 @@ const socketServer = (server) => {
 
             for(let i = 0; i < sizeOfGameSession; i++) {
                 const gameObject = gamesInSession[i];
-               // console.log(`----------------------------`);
-               // console.log(`GameObject here`);
-              //  console.log(gameObject);
-              //  console.log(`----------------------------`);
+
                 if(gameObject.roomNumber === roomNumber) {
                     currentGame = gameObject;
                     console.log("inside reset-next-turn")
                     break;
                 }
             }
-
-
 
             console.log(`current game in RESET-NEXT-TURN`);
             console.log(currentGame);
@@ -379,9 +397,16 @@ const socketServer = (server) => {
             console.log(`p2: ${p2}`);
             console.log(`player: ${player}`);
 
+            // Before we check if p1 or p2 is the player for the winner of this turn,
+            // We have to implement incrementing both the scores for a double tie at the end
+
             const roundValue = currentGame.getRoundValue();
 
-            if(p1 === player) {
+            // Double tie, give both teams a point
+            if(player === "tie") {
+                currentGame.setTeamOneScore(roundValue);
+                currentGame.setTeamTwoScore(roundValue);
+            } else if(p1 === player) {
                 let currentScoreOne = currentGame.getTeamOneScore();
                 console.log(`currentScoreOne: ${currentScoreOne}`);
                 currentGame.setTeamOneScore(roundValue);
@@ -412,10 +437,7 @@ const socketServer = (server) => {
                 // delete the game from the server state
                 for(let i = 0; i < sizeOfGameSession; i++) {
                     const gameObject = gamesInSession[i];
-                   // console.log(`----------------------------`);
-                   // console.log(`GameObject here`);
-                  //  console.log(gameObject);
-                  //  console.log(`----------------------------`);
+
                     if(gameObject.roomNumber === roomNumber) {
                         gamesInSession = gamesInSession.toSpliced(i, 1);
                     }
@@ -611,10 +633,7 @@ const socketServer = (server) => {
  
             for(let i = 0; i < sizeOfGameSession; i++) {
                 const gameObject = gamesInSession[i];
-               // console.log(`----------------------------`);
-               // console.log(`GameObject here`);
-              //  console.log(gameObject);
-              //  console.log(`----------------------------`);
+
                 if(gameObject.roomNumber === roomNumber) {
                     currentGame = gameObject;       
                     break;
@@ -634,33 +653,44 @@ const socketServer = (server) => {
                 // want the other player to reveal the hand...
                 // check the player hand for the clowns...
                 if(p1 === player) {
-                    const playerOneHand = currentGame.getPlayerOneHand();
+                    const playerTwoHand = currentGame.getPlayerTwoHand();
 
-                    const clownsResult = currentGame.checkForThreeClowns(playerOneHand);
+                    const clownsResult = currentGame.checkForThreeClowns(playerTwoHand);
                     
                     console.log(`clownsResult: ${clownsResult}`);
                     if(clownsResult) { // give point to other player
                         currentGame.setTeamTwoScore(1);
                         const teamOneScore = currentGame.getTeamOneScore();
                         const teamTwoScore = currentGame.getTeamTwoScore();
-                        
-                        io.to(roomNumber).emit("clowns-called", -2, p1, teamOneScore, teamTwoScore);
+
+                        currentGame.setPlayerTwoHand([]);
+                        currentGame.dealPlayerTwo();
+    
+                        const p2Hand = currentGame.getPlayerTwoHand();
+    
+                        io.to(roomNumber).emit("clowns-called", -2, p1, teamOneScore, teamTwoScore, p2Hand);
                         return;
                     }
                     
                     io.to(roomNumber).emit("clowns-called", 1, p1); 
                     return;
                 } else if(p2 === player) {
-                    const playerTwoHand = currentGame.getPlayerTwoHand();
+                    const playerOneHand = currentGame.getPlayerOneHand();
                     
-                    const clownsResult = currentGame.checkForThreeClowns(playerTwoHand);
+                    const clownsResult = currentGame.checkForThreeClowns(playerOneHand);
                     
                     console.log(`clownsResult: ${clownsResult}`);
                     if(clownsResult) { // give point to other player
                         currentGame.setTeamOneScore(1);
                         const teamOneScore = currentGame.getTeamOneScore();
                         const teamTwoScore = currentGame.getTeamTwoScore();
-                        io.to(roomNumber).emit("clowns-called", -3, p2, teamOneScore, teamTwoScore);
+
+                        currentGame.setPlayerOneHand([]);
+                        currentGame.dealPlayerOne();
+
+                        const p1Hand = currentGame.getPlayerOneHand();
+
+                        io.to(roomNumber).emit("clowns-called", -3, p2, teamOneScore, teamTwoScore, p1Hand);
                         return;
                     }
 

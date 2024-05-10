@@ -372,6 +372,8 @@ class gameLoop {
             }
         }
 
+        console.log(`countClowns: ${countClowns}`);
+
         if(countClowns === 3) { // player does have clowns..
             return true;
         } 
