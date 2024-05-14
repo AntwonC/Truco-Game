@@ -156,7 +156,7 @@ const socketServer = (server) => {
 
                 gamesInSession.push(gameSession);
 
-                io.to(roomNumber).emit("start-game-confirmed", gameSession.deck, gameSession.playerOneHand, gameSession.playerTwoHand, gameSession.getPlayerOne(), gameSession.getPlayerTwo(), gameSession.turnCard, gameSession.specialCard, gameSession);
+                io.to(roomNumber).emit("start-game-confirmed", gameSession.deck, gameSession.playerOneHand, gameSession.playerTwoHand, gameSession.getPlayerOne(), gameSession.getPlayerTwo(), gameSession.turnCard, gameSession.specialCard, gameSession, gameSession.getRoundValue());
 
             }
 
@@ -428,6 +428,15 @@ const socketServer = (server) => {
             console.log(currentGame.getTeamOneScore());
             console.log(currentGame.getTeamTwoScore());
 
+            // Check if any player/team has reached the score threshold
+            const checkScoreThreshold = currentGame.checkReachedScoreThreshold();
+            console.log(`checkScoreThreshold: ${checkScoreThreshold}`);
+            // team1/player checks if they want to play this round
+            if(checkScoreThreshold === 1) { 
+                socket.to(roomNumber).emit("score-threshold");
+            } else if(checkScoreThreshold === 2) {
+                socket.to(roomNumber).emit("score-threshold");
+            }
             // NOTE: When both players play cards that result in tie for 2 rounds.. give both players +1 score
             // can ONLY use 3 clowns if you have 3 cards
             // Check if the game limit has been reached
@@ -487,7 +496,7 @@ const socketServer = (server) => {
             // incrementing twice.. but can have a workaround by just decreasing the value once..?
         
             // io.to(roomNumber).emit("start-game-confirmed", gameSession.deck, gameSession.playerOneHand, gameSession.playerTwoHand, gameSession.getPlayerOne(), gameSession.getPlayerTwo(), gameSession.turnCard, gameSession.specialCard, gameSession);
-            io.to(roomNumber).emit("reset-completed", currentGame.getPlayerOneHand(), currentGame.getPlayerTwoHand(), currentGame.turnCard, currentGame.specialCard, currentGame.getTeamOneScore(), currentGame.getTeamTwoScore(), currentGame.playerTurn);
+            io.to(roomNumber).emit("reset-completed", currentGame.getPlayerOneHand(), currentGame.getPlayerTwoHand(), currentGame.turnCard, currentGame.specialCard, currentGame.getTeamOneScore(), currentGame.getTeamTwoScore(), currentGame.playerTurn, currentGame.getRoundValue(), currentGame.p1Rounds, currentGame.p2Rounds);
            // io.emit("reset-completed", currentGame.getPlayerOneHand(), currentGame.getPlayerTwoHand(), currentGame.turnCard, currentGame.specialCard, currentGame.getTeamOneScore(), currentGame.getTeamTwoScore(), currentGame.playerTurn);
             
 
@@ -652,6 +661,7 @@ const socketServer = (server) => {
 
                 // want the other player to reveal the hand...
                 // check the player hand for the clowns...
+                // if player does have 3 clowns, need to re-draw for the player that called it
                 if(p1 === player) {
                     const playerTwoHand = currentGame.getPlayerTwoHand();
 
@@ -736,7 +746,9 @@ const socketServer = (server) => {
             io.to(roomNumber).emit("clowns-called", -1);
         });
 
+        socket.on("last-hand-before-winning", () => {
 
+        });
         
     });
     

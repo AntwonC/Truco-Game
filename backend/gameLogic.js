@@ -5,6 +5,7 @@ const SCALE = ["3", "2", "A", "K", "J", "Q", "7", "6", "5", "4"];
 const SUITSCALE = ["D", "S", "H", "C"];
 
 const WINNING_SCORE = 3;
+const BEFORE_WINNING_SCORE = 2;
 
 class gameLoop {
     deck = [];
@@ -350,7 +351,7 @@ class gameLoop {
         const teamOne = this.teamOneScore;
         const teamTwo = this.teamTwoScore;
 
-        // For some reason, the server is behind by 1 hand...
+        // For some reason, the server is behind by 1 hand... or the client is not updating correctly
 
         if(teamOne >= WINNING_SCORE) {
             // return a value to indicate we have a "winner"
@@ -360,6 +361,20 @@ class gameLoop {
         }
 
         return 0;
+    }
+
+    checkReachedScoreThreshold = () => {
+        const teamOne = this.teamOneScore;
+        const teamTwo = this.teamTwoScore;
+
+        if(teamOne >= BEFORE_WINNING_SCORE) {
+            // return a value to indicate that team1 gets to choose to surrender the round or play
+            return 1;
+        } else if(teamTwo >= BEFORE_WINNING_SCORE) {
+            return 2;
+        }
+
+        return 0; // has not happened yet
     }
 
     checkForThreeClowns = (playerHand) => {
