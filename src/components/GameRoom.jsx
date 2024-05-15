@@ -1,10 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Container from "react-bootstrap/Container";
 import Button from "react-bootstrap/Button";
 import Navbar from "react-bootstrap/Navbar";
 import Nav from "react-bootstrap/Nav";
 import Card from './Card';
+import TrucoContainer from './TrucoContainer';
+import ThreeClownsContainer from './ThreeClownsContainer';
+import LastHandOptions from './LastHandOptions';
+import SpecialCards from './SpecialCards';
 import e from "cors";
 
 const GameRoom = ({ socket, roomNumber, user }) => {
@@ -55,9 +59,111 @@ const GameRoom = ({ socket, roomNumber, user }) => {
   const [gameBoard, setGameBoard] = useState([]);
 
   const [gameSession, setGameSession] = useState({});
+  
+  const [gameWinner, setGameWinner] = useState(0);
 
   const [clicked, setClicked] = useState(false);
 
+  const [roundValue, setRoundValue] = useState(1);
+ // const [trucoPressed, setTrucoPressed] = useState(false);
+  const [acceptTruco, setAcceptTruco] = useState(false);
+  const [acceptClown, setAcceptClown] = useState(false);
+
+  const [renderAgain, setRenderAgain] = useState(false);
+
+  const [isDisable, setIsDisable] = useState(false);
+
+  //const [waiting, setWaiting] = useState(false);
+  // NOTE: For some reason, player using a special card to win the round will keep it true
+  // Spam clicking seems to cause the problem of waiting to stay "true"
+  const waiting = useRef(false); 
+  
+  const trucoPressed = useRef(false);
+  const threeClownsPressed = useRef(false);
+
+  const revealPlayerOneHand = useRef(false);
+  const revealPlayerTwoHand = useRef(false);
+
+  const lastHandShowdownOne = useRef(false);
+  const lastHandShowdownTwo = useRef(false);
+
+
+
+  const trucoClicked = (player, number) => {
+   // setAcceptTruco(true);
+    trucoPressed.current = true;
+    socket.emit("truco-clicked", player, number, false, false);
+  }
+
+  
+  const clickedAcceptTruco = (player, number) => {
+    trucoPressed.current = false;
+    setAcceptTruco(false);
+    // socket.emit("truco-accepted", )
+    socket.emit("truco-clicked", player, roomNumber, true, false)
+  }
+  
+  const clickedDeclineTruco = (player, number) => {
+    trucoPressed.current = false;
+    
+    console.log("trucoPressed....");
+    console.log(trucoPressed.current);
+    setAcceptTruco(false);
+    // setDeclineTruco(!declineTruco);
+    socket.emit("truco-clicked", player, roomNumber, false, true);
+    // setRoundValue(1);
+  }
+  
+  const threeClownsClicked = (player, number) => {
+    threeClownsPressed.current = true;
+    socket.emit("3-clowns-clicked", player, number, false, false);
+  }
+  
+  const clickedAcceptClowns = (player, number) => {
+    threeClownsPressed.current = false;
+    setAcceptClown(true);
+    socket.emit("3-clowns-clicked", player, number, true, false);
+    // socket.emit("truco-accepted", )
+    //  socket.emit("truco-clicked", player, roomNumber, true, false)
+  }
+  
+  const clickedDeclineClowns = (player, number) => {
+    threeClownsPressed.current = false;
+    
+    setAcceptClown(false);
+    socket.emit("3-clowns-clicked", player, number, false, true);
+    // setDeclineTruco(!declineTruco);
+   // socket.emit("truco-clicked", player, roomNumber, false, true);
+    // setRoundValue(1);
+  }
+
+  const lastHandAccepted = (player, number) => {
+    
+    if(p1 === player) {
+      console.log(`Player 1 is making the decision...`);
+      lastHandShowdownOne.current = false;
+    } else if(p2 === player) {
+      console.log(`Player 2 is making the decision...`);
+      lastHandShowdownTwo.current = false;
+    }
+    socket.emit("last-hand-before-winning", player, number, true, false);
+  }
+
+  const lastHandDeclined = (player, number) => {
+    if(p1 === player) {
+      console.log(`Player 1 is making the decision......`);
+      lastHandShowdownOne.current = false;
+    } else if(p2 === player) {
+      console.log(`Player 2 is making the decision......`);
+      lastHandShowdownTwo.current = false;
+    }
+
+    socket.emit("last-hand-before-winning", player, number, false, true);
+  }
+
+  
+
+  
 
   const getUsersOnTable = async () => {
     await fetch(`${URL}/dashboard/user-joined-table`, {
@@ -93,6 +199,7 @@ const GameRoom = ({ socket, roomNumber, user }) => {
 
  const joinTableButtonThree = () => {
     setJoinSlotThree(true);
+    
  }
 
  const joinTableButtonFour = () => {
@@ -108,10 +215,6 @@ const GameRoom = ({ socket, roomNumber, user }) => {
 
     //dePopulateRoom();
   };
-
-  const dePopulateRoom = () => {
-
-  }
 
   const decideTurn = (playerTurns) => {
     // [-1, 0]
@@ -201,7 +304,9 @@ const GameRoom = ({ socket, roomNumber, user }) => {
     console.log(playerTurns);
     console.log(card);
    
+    
     socket.emit("turn-play-card", card, gameSession, playerTurns, roomNumber);
+   
   }
     
   const showHand = (playerHand) => {
@@ -212,6 +317,14 @@ const GameRoom = ({ socket, roomNumber, user }) => {
           return <Card suit={element.suit} rank={element.rank} key={element.key} onClick={cardClicked} click={true}/>
         })}
     </div>)
+  }
+
+  const disableClickRevealHand = (playerHand) => {
+    return ( <div className="player-cards">
+                {playerHand.map((element) => {
+                  return <Card suit={element.suit} rank={element.rank} key={element.key} click={true}/>
+                })}
+             </div>)
   }
 
   const disableClickShowHand = (playerHand, player) => {
@@ -327,7 +440,7 @@ const GameRoom = ({ socket, roomNumber, user }) => {
 
 
     socket.on("user-left-room", (userFromTable, room, userArray, usersInRoom) => {
-      console.log(`left-room getting triggered in GameRoom.jsx`);
+      console.log(`user-left-room getting triggered in GameRoom.jsx`);
       
       console.log(`${usersInRoom} in room ${room} now after leaving...`);
       console.log(userFromTable);
@@ -337,8 +450,9 @@ const GameRoom = ({ socket, roomNumber, user }) => {
       setUserTable([...userArray]);
     });
     
-    socket.on("start-game-confirmed", (deck, p1Hand, p2Hand, p1, p2, turnCard, specialCard, gameSession) => {
+    socket.on("start-game-confirmed", (deck, p1Hand, p2Hand, p1, p2, turnCard, specialCard, gameSession, roundValue) => {
 
+      console.log(`RoundValue: ${roundValue}`);
       console.log("Generate cards on the frontend now to the players...");
       console.log(deck);
       console.log(`Player 1 Hand: ${p1}`);
@@ -365,6 +479,8 @@ const GameRoom = ({ socket, roomNumber, user }) => {
       setP1(p1);
       setP2(p2);
 
+      setRoundValue(roundValue);
+
       setPlayerTurns(gameSession.playerTurn)
 
 
@@ -381,8 +497,11 @@ const GameRoom = ({ socket, roomNumber, user }) => {
       
       if(p1 === user) {
         setPlayerOneHand([...p1Hand]);
+        setPlayerTwoHand([...p2Hand]);
       }
-       if(p2 === user) {
+      
+      if(p2 === user) {
+        setPlayerOneHand([...p1Hand]);
         setPlayerTwoHand([...p2Hand]);
       }
 
@@ -447,6 +566,10 @@ const GameRoom = ({ socket, roomNumber, user }) => {
     });
 
     socket.on("turn-completed", (gameSess, p1Hand, p2Hand, roundOne, roundTwo) => {
+     // revealHand.current = false;
+
+      waiting.current = false;
+
       console.log(`-------------------------`);
       console.log('Game Sess:');
       console.log(gameSess);
@@ -475,24 +598,38 @@ const GameRoom = ({ socket, roomNumber, user }) => {
       setPlayerTwoHand([...p2Hand]);
 
       setPlayerTurns(gameSess.playerTurn);
+     /* setTimeout(() => {
+
+      }, 1500); */
       
       if(gameSess.gameBoard.length === 0) {
         // put animation here??
-        setGameBoard([]);
+       
+          setGameBoard([]);
+
+      
       } else {
         setGameBoard(gameSess.gameBoard);
       }
 
     });
 
-    socket.on("winner-round", (winner, p1RoundsArr, p2RoundsArr, playerOne, playerTwo) => {
+    socket.on("winner-round", (winner, p1RoundsArr, p2RoundsArr, playerOne, playerTwo, turns) => {
       const winnerUser = winner.turn;
 
       setUserWonRound(winnerUser);
 
+      console.log(`Turns...`);
+      console.log(turns);
+
+     /* setTimeout(() => {
+        
+      }, 1500); */
+      
+      setPlayerTurns([...turns]);
       // check if anybody has won this turn...
-      const p1TempArr = p1RoundsArr;
-      const p2TempArr = p2RoundsArr;
+      const p1TempArr = [...p1RoundsArr];
+      const p2TempArr = [...p2RoundsArr];
 
       if(winnerUser === playerOne) {
         // increment round for the user...
@@ -501,11 +638,47 @@ const GameRoom = ({ socket, roomNumber, user }) => {
         setPlayerTwoRound([...p2RoundsArr]);
       }
 
+
       // [0, -1, -1]
       // [0, 0, -1]
 
       // [-1, 0, -1]
       // [0, -1, 0]
+
+      // Check for double tie first... then increment score based on that..
+      let checkDoubleTieCounter1 = 0;
+      
+      for(let x = 0; x < p1TempArr.length; x++) {
+        const currentIndex = p1TempArr[x];
+        
+        if(checkDoubleTieCounter1 === 2) {
+          
+        } else if(currentIndex === 0) {
+          checkDoubleTieCounter1++;
+        }
+      }
+      
+      let checkDoubleTieCounter2 = 0;
+
+      for(let x = 0; x < p2TempArr.length; x++) {
+        const currentIndex = p2TempArr[x];
+
+        if(checkDoubleTieCounter2 === 2) {
+
+        } else if(currentIndex === 0) {
+          checkDoubleTieCounter2++;
+        }
+    }
+
+      // Should give both teams the point, if reaches the limit then it will be handled.
+      // Person that initiated the tie should go first..  -> 05/10/2024
+      if(checkDoubleTieCounter1 === 2 && checkDoubleTieCounter2 === 2) {
+        console.log("We got a double tie! Give a point to both teams");
+        const tieString = "tie";
+        socket.emit("reset-next-turn", tieString, roomNumber);
+        return;
+      }
+
 
       let p1Counter = 0;
       //console.log(`p1Counter: ${p1Counter}`);
@@ -524,6 +697,7 @@ const GameRoom = ({ socket, roomNumber, user }) => {
       }
 
       let p2Counter = 0;
+     
       //console.log(`p2Counter: ${p2Counter}`);
 
       for(let i = 0; i < p2TempArr.length; i++) {
@@ -543,7 +717,13 @@ const GameRoom = ({ socket, roomNumber, user }) => {
 
     });
 
-    socket.on("reset-completed", (p1Hand, p2Hand, turnCard, specialCard, teamOneScore, teamTwoScore) => {
+    socket.on("reset-completed", (p1Hand, p2Hand, turnCard, specialCard, teamOneScore, teamTwoScore, playerTurn, roundValue, p1Rounds, p2Rounds) => {
+
+      revealPlayerOneHand.current = false;
+      revealPlayerTwoHand.current = false;
+
+      setRenderAgain(false);
+    //  revealHand.current = false;
       // currentGame.getPlayerOneHand(),
       // currentGame.getPlayerTwoHand(), 
       //currentGame.turnCard, currentGame.specialCard, 
@@ -555,6 +735,15 @@ const GameRoom = ({ socket, roomNumber, user }) => {
     //  }));
 
       //console.log(nextHand);
+      setRoundValue(roundValue);
+      // To have delay to show how many rounds each team/player won
+      setTimeout(() => {
+        setPlayerOneRound([...p1Rounds]);
+        setPlayerTwoRound([...p2Rounds]);
+      }, 1500);
+      
+      setPlayerTurns([...playerTurn]);
+      
       setPlayerOneHand([...p1Hand]);
       setPlayerTwoHand([...p2Hand]);
 
@@ -564,15 +753,165 @@ const GameRoom = ({ socket, roomNumber, user }) => {
       console.log(`teamOneScore: ${teamOneScore}`);
       console.log(`teamTwoScore: ${teamTwoScore}`);
 
+      
       setTeamOne(teamOneScore);
       setTeamTwo(teamTwoScore);
 
+      
+    
+    });
+
+    socket.on("score-threshold", (player, beforeWinningScore, t1Score, t2Score) => {
+      console.log("Score-threshold being called!");
+
+      console.log(`t1Score: ${t1Score}`);
+      console.log(`t2Score: ${t2Score}`);
+      console.log(`beforeWinningScore: ${beforeWinningScore}`);
+      console.log(`player: ${player}`);
+
+      if(beforeWinningScore === t1Score) {
+        lastHandShowdownOne.current = true;
+      } else if(beforeWinningScore === t2Score) {
+        lastHandShowdownTwo.current = true;
+      }
+    //  socket.emit("last-hand-before-winning", )
+    });
+
+    socket.on("game-winner", (value) => {
+      if(value === 1) { // p1 won
+        setGameWinner(1);
+      } else if(value === 2) { // p2 won
+        setGameWinner(2);
+      } else {
+        setGameWinner(0);
+      }
 
     });
 
     socket.on("game-started-already", () => {
       console.log(`Game already started for that room`);
 
+    });
+
+    socket.on("truco-called", (value, isTruco) => {
+      console.log("Truco was called by the other player!");
+      console.log(`value: ${value}`);
+
+
+     // trucoPressed.current = true;
+
+      if(value === -1) { // other player has not made the decision yet
+        trucoPressed.current = true;
+        setAcceptTruco(true); // forces re-render, use ref will be alive
+      } else if(value === 1) {
+        setRoundValue(1);
+        trucoPressed.current = false;
+        setAcceptTruco(false);
+        //trucoPressed.current = false;
+      } else if(value === 3) {
+        setRoundValue(3);
+        trucoPressed.current = false;
+        setAcceptTruco(false);
+      //  trucoPressed.current = false;
+      }
+    });
+
+    socket.on("truco-declined", (p1Hand, p2Hand, turnCard, specialCard, teamOneScore, teamTwoScore, playerTurn) => {
+        setAcceptTruco(false);
+        trucoPressed.current = false;
+
+        setPlayerOneHand([...p1Hand]);
+        setPlayerTwoHand([...p2Hand]);
+
+
+        setTurnCard(turnCard);
+        setMahila(specialCard);
+
+        setTeamOne(teamOneScore);
+        setTeamTwo(teamTwoScore);
+
+        setPlayerTurns([...playerTurn]);
+    });
+
+    socket.on("clowns-called", (value, player, teamOneScore, teamTwoScore, playerHand) => {
+      // Player can call 3 Clowns ANY turn... 
+      console.log("Clowns called!!!");
+      console.log(`player: ${player}`);
+      console.log(`p1: ${p1}`);
+      console.log(`p2: ${p2}`);
+      if(value === -1) {
+          threeClownsPressed.current = true;
+          setRenderAgain(false);
+          setAcceptClown(true);
+      } else if(value === 1) { // 1 -> reveal hand, player thinks the other player has 3 Clowns
+          console.log("Player 1 has accepted the 3 Clowns!");
+          threeClownsPressed.current = false;
+          revealPlayerTwoHand.current = true;
+ 
+          
+          //revealHand.current = true;
+          setRenderAgain(true);
+          setAcceptClown(false);
+      } else if(value === 2) { // reveal hand to players
+          console.log("Player 2 has accepted the 3 Clowns!");
+          threeClownsPressed.current = false;
+          revealPlayerOneHand.current = true;
+
+          setRenderAgain(true);
+          setAcceptClown(false);
+      } else if(value === -2) { // there was not a 3 clowns somewhere... update team 2 score
+        console.log("3-Clowns NEGATIVE 2 is here");
+          threeClownsPressed.current = false;
+          setTeamTwo(teamTwoScore);
+
+          setPlayerTwoHand([]);
+
+          setPlayerTwoHand([...playerHand]);
+
+          setRenderAgain(false);
+          setAcceptClown(false);
+      } else if(value === -3) { // p2 giving point to team1
+          console.log("3-Clowns NEGATIVE 3 is here");
+          threeClownsPressed.current = false;
+          setTeamOne(teamOneScore);
+
+          setPlayerOneHand([]);
+          setPlayerOneHand([...playerHand]);
+          setRenderAgain(false);
+          setAcceptClown(false);
+      } else if(value === -4) { // declined a 3-Clowns call, p2 gets new hand
+          console.log("in -4");
+          threeClownsPressed.current = false;
+
+          setAcceptClown(false);
+          setRenderAgain(false);
+
+          setPlayerTwoHand([]);
+
+          setPlayerTwoHand([...playerHand]);
+
+      } else if(value === -5) { // p1 gets a new hand, declined 3-Clowns call
+          console.log("in -5");
+          threeClownsPressed.current = false;
+
+          setRenderAgain(false);
+          setAcceptClown(false);
+
+          setPlayerOneHand([]);
+          setPlayerOneHand([...playerHand]);
+      }
+    });
+
+    socket.on("waiting-game-board", () => {
+      console.log("Change acceptTruco to true");
+     // setWaiting(true);
+     
+    });
+    
+    socket.on("waiting-game-board-finished", () => {
+      console.log("Change acceptTruco to false");
+    //  setWaiting(false);
+      waiting.current = false;
     });
     // ask server to check for user already on a table in a room
    // socket.emit("check-user-joined-table", user);
@@ -619,8 +958,10 @@ const GameRoom = ({ socket, roomNumber, user }) => {
       socket.off("reset-completed");
       socket.off("turn-completed");
       socket.off("winner-round");
-      socket.removeListener("reset-completed");
-      socket.removeAllListeners();
+      socket.off("waiting-game-board-finished");
+      socket.off("clowns-called");
+      socket.off("truco-called")
+    //  socket.removeAllListeners();
     }
 
     /* We want to position the current user's hand in front of them
@@ -663,26 +1004,47 @@ const GameRoom = ({ socket, roomNumber, user }) => {
                     {updateRound(playerTwoRound, p2, userWonRound)}
                     </div>
                 </div>
+                
                 <div className="score-container">
                   Score
                   <div>{teamOne}</div>
                   <div>{teamTwo}</div>
                 </div>
+
+                <div className="value-container">
+                     Value
+                     <div>{roundValue}</div>
+                </div>
               <div className="special-card-container">
                 <div>
-                  Turn Card
+                  Turn
                   <Card suit={turnCard.suit} rank={turnCard.rank} click={true} />
                 </div>
 
               <div >
-                Special Card
+                Special
                 <Card suit={mahila.suit} rank={mahila.rank} key={mahila.key} click={true}/>
               </div>
+
+
+              
               </div>
                 
               </div>
  
-     
+            <div>
+            {gameWinner === 1 ?
+            <h3>{p1} has won!</h3>
+            : 
+            <></>
+            }
+
+            {gameWinner === 2 ?
+            <h3>{p2} has won!</h3>
+            : 
+            <></>
+            }
+            </div>
       <Container>
 
             
@@ -692,10 +1054,15 @@ const GameRoom = ({ socket, roomNumber, user }) => {
 
 
               {gameBoard.map((element) => {
+                if(gameBoard.length === 2) {
+                  waiting.current = true;
+                } else {
+                  waiting.current = false;
+                }
                 return (<Card suit={element.suit} rank={element.rank} key={element.key}  click={true} />)
               })}
             </div>
-                {gameStarted
+                {gameStarted && gameWinner === 0
                   ?
                   <>
                     <div className="player-one-hand-container">
@@ -712,9 +1079,17 @@ const GameRoom = ({ socket, roomNumber, user }) => {
                       {playerTurns[0] === -1 
                       ?
                       <>
-                      <div className="circle"></div>
-                      {disableClickShowHand(playerOneHand, p1)}
-                     
+                        <div className="circle"></div>
+                        { revealPlayerOneHand.current === true && renderAgain
+                        ?
+                        <> 
+                          {disableClickRevealHand(playerOneHand)}
+                        </>
+                        :
+                        <>
+                          {disableClickShowHand(playerOneHand, p1)}
+                        </>
+                        }
                       </>
                       :
                       <>{disableClickShowHand(playerOneHand, p1)}</>
@@ -733,7 +1108,16 @@ const GameRoom = ({ socket, roomNumber, user }) => {
                       ?
                       <>
                       <div className="circle"></div>
-                      {disableClickShowHand(playerTwoHand, p2)}
+                      { revealPlayerTwoHand.current === true && renderAgain
+                        ?
+                        <> 
+                          {disableClickRevealHand(playerTwoHand)}
+                        </>
+                        :
+                        <>
+                          {disableClickShowHand(playerTwoHand, p2)}
+                        </>
+                        }
                      
                       </>
                       :
@@ -743,7 +1127,9 @@ const GameRoom = ({ socket, roomNumber, user }) => {
                       
                       </>
                       :
-                      <></>
+                      <>
+
+                      </>
                     }
 
 
@@ -763,18 +1149,68 @@ const GameRoom = ({ socket, roomNumber, user }) => {
                       ?
                       <>
                       <div className="circle"></div>
-                      {showHand(playerOneHand)}
-                     
+                      <div className="option-container">
+                        <button type="button" className="btn btn-info" onClick={() => {trucoClicked(p1, roomNumber)}}>Truco</button>
+                        <button type="button" className="btn btn-info" onClick={() => {threeClownsClicked(p1, roomNumber)}} disabled={playerOneHand.length < 3 ? true : false}>3 Clowns</button>
+
+                      </div>
+                        
+                      {acceptTruco || waiting.current === true || acceptClown || lastHandShowdownOne.current === true
+                      ?
+                      <>
+                      {disableClickShowHand(playerOneHand, p1)}
                       </>
                       :
-                      <>{disableClickShowHand(playerOneHand, p1)}</>
+                      <>
+                      {showHand(playerOneHand)}
+                      </>
                       }
+
+                      
+                      </>
+                      :
+                      <>
+                      <TrucoContainer 
+                        show={trucoPressed.current === true} 
+                        acceptClicked={clickedAcceptTruco} 
+                        declineClicked={clickedDeclineTruco}
+                        rNumber={roomNumber}
+                        player={p1}
+                      ></TrucoContainer>
+                      
+                      <ThreeClownsContainer
+                        show={threeClownsPressed.current === true}
+                        acceptClicked={clickedAcceptClowns}
+                        declineClicked={clickedDeclineClowns}
+                        rNumber={roomNumber}
+                        player={p1}
+                        
+                      />
+                      {disableClickShowHand(playerOneHand, p1)}
+                      </>
+                     }
                     
                       
                       </>
                       :
-                      <></>
-                      }
+                      <>
+                        {lastHandShowdownOne.current === true
+                          ?
+                          <>
+                            <LastHandOptions 
+                              show={lastHandShowdownOne.current === true}
+                              acceptClicked={lastHandAccepted}
+                              declineClicked={lastHandDeclined}
+                              rNumber={roomNumber}
+                              player={p1}
+                            />
+                          </>
+                            :
+                          <></>
+                        }
+                      </>
+                    }
+
 
                       { p2 === user
                       ?
@@ -783,21 +1219,66 @@ const GameRoom = ({ socket, roomNumber, user }) => {
                       ?
                       <>
                       <div className="circle"></div>
+                      <div className="option-container">
+                        <button type="button" className="btn btn-info" onClick={() => {trucoClicked(p2, roomNumber)}}>Truco</button>
+                        <button type="button" className="btn btn-info" onClick={() => {threeClownsClicked(p2, roomNumber)}} disabled={playerTwoHand.length < 3 ? true : false}>3 Clowns</button>
+                      </div >
+
+                      {acceptTruco || waiting.current === true || acceptClown || lastHandShowdownTwo.current === true
+                      ?
+                      <>
+                      {disableClickShowHand(playerTwoHand, p2)}
+                      </>
+                      :
+                      <>
                       {showHand(playerTwoHand)}
+                      </>
+                      }
                      
                       </>
                       :
-                      <> {disableClickShowHand(playerTwoHand, p2)}</>
-                      }
-                    
+                      <> 
+                      <TrucoContainer 
+                      show={trucoPressed.current === true} 
+                      acceptClicked={clickedAcceptTruco} 
+                      declineClicked={clickedDeclineTruco}
+                      rNumber={roomNumber}
+                      player={p2}
+                      ></TrucoContainer>
+
+                      <ThreeClownsContainer
+                        show={threeClownsPressed.current === true}
+                        acceptClicked={clickedAcceptClowns}
+                        declineClicked={clickedDeclineClowns}
+                        rNumber={roomNumber}
+                        player={p2}
+                        
+                      />
                       
+                      {disableClickShowHand(playerTwoHand, p2)}
+
+                      </>
+                      }
+
                       </>
                       :
-                      <></>
+                      <>
+                        {lastHandShowdownTwo.current === true
+                          ?
+                          <><LastHandOptions
+                            show={lastHandShowdownTwo.current === true}
+                            acceptClicked={lastHandAccepted}
+                            declineClicked={lastHandDeclined}
+                            rNumber={roomNumber}
+                            player={p2}
+                          />
+                          
+                          </>
+                            :
+                          <></>
+                        }
+                      </>
                       }
-
-
-
 
                       <h3 className="user-name-table-two">{user.length > 0 ? user : ""}</h3> 
                       
@@ -811,6 +1292,10 @@ const GameRoom = ({ socket, roomNumber, user }) => {
         <Button size="sm" onClick={leaveRoomButton}>
           Leave
         </Button>
+
+        <div className="special-rank-order-container">
+          <SpecialCards />
+        </div>
       </Container>
 
 

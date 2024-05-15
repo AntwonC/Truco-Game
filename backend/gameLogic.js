@@ -118,6 +118,10 @@ class gameLoop {
         this.isTruco = truthy;
     }
 
+    getBeforeWinningScore = () => {
+        return BEFORE_WINNING_SCORE;
+    }
+
 
 
     createDeck = () => {
@@ -268,9 +272,19 @@ class gameLoop {
     // tie 
     // parameters are of type "string", compare 
     // implement using the special card
+    // FIX: special cards not being taken into effect when a card has a higher rank than the special 
     compareCardsRank = (cardOneRank, cardTwoRank, cardOneSuit, cardTwoSuit) => {
         const currentSpecialCardRank = this.specialCard.rank;
         const currentSpecialCardSuit = this.specialCard.suit;
+        
+        console.log(`currentSpecialCardRank: ${currentSpecialCardRank}`);
+        console.log(`currentSpecialCardSuit: ${currentSpecialCardSuit}`);
+
+        console.log(`cardOneRank: ${cardOneRank}`);
+        console.log(`cardTwoRank: ${cardTwoRank}`);
+
+        console.log(`cardOneSuit: ${cardOneSuit}`);
+        console.log(`cardTwoSuit: ${cardTwoSuit}`);
         // tie
         if(cardOneRank === cardTwoRank && cardOneRank !== currentSpecialCardRank && cardTwoRank !== currentSpecialCardRank) {
             return -1;
@@ -278,7 +292,7 @@ class gameLoop {
 
 
         // somebody has the special card.... compare only with OTHER special cards else automatically win round
-        if(cardOneRank === currentSpecialCardRank && cardOneRank !== currentSpecialCardRank) {
+        if(cardOneRank === currentSpecialCardRank && cardTwoRank !== currentSpecialCardRank) {
             const findCardRankSpecial = (element) => element === cardOneRank;
 
             const cardOneSpecialIndex = SCALE.findIndex(findCardRankSpecial);

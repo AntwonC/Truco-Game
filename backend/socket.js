@@ -334,7 +334,7 @@ const socketServer = (server) => {
     
                 }
 
-            }, 3000);
+            }, 1500);
 
         //    console.log(currentGame['playerOneHand']);
 
@@ -432,10 +432,71 @@ const socketServer = (server) => {
             const checkScoreThreshold = currentGame.checkReachedScoreThreshold();
             console.log(`checkScoreThreshold: ${checkScoreThreshold}`);
             // team1/player checks if they want to play this round
+            const beforeWinningScore = currentGame.getBeforeWinningScore();
+
+            const t1Score = currentGame.getTeamOneScore();
+            const t2Score = currentGame.getTeamTwoScore();
+
             if(checkScoreThreshold === 1) { 
-                socket.to(roomNumber).emit("score-threshold");
+                io.to(roomNumber).emit("score-threshold", p1, beforeWinningScore, t1Score, t2Score);
+                
+                currentGame.createDeck();
+                //  console.log(currentGame.deck);
+                 // console.log(`----------------------`);
+                 currentGame.shuffleDeck();
+                 currentGame.shuffleDeck();
+                 currentGame.shuffleDeck();
+                 // winner goes first..
+                 currentGame.dealTurnCard(currentGame.getDeck());
+                 currentGame.dealSpecialCard();
+                 
+                 currentGame.setPlayerOneHand([]);
+                 currentGame.setPlayerTwoHand([]);
+                 currentGame.dealPlayerOne();
+                 currentGame.dealPlayerTwo();
+                 
+                 currentGame.p1Rounds = [-1, -1, -1];
+                 currentGame.p2Rounds = [-1, -1, -1];
+                 
+                 // Cheap Trick: The event is being called twice because of two clients and 
+                 // incrementing twice.. but can have a workaround by just decreasing the value once..?
+                 
+                 // io.to(roomNumber).emit("start-game-confirmed", gameSession.deck, gameSession.playerOneHand, gameSession.playerTwoHand, gameSession.getPlayerOne(), gameSession.getPlayerTwo(), gameSession.turnCard, gameSession.specialCard, gameSession);
+                 
+                 
+                 io.to(roomNumber).emit("reset-completed", currentGame.getPlayerOneHand(), currentGame.getPlayerTwoHand(), currentGame.turnCard, currentGame.specialCard, currentGame.getTeamOneScore(), currentGame.getTeamTwoScore(), currentGame.playerTurn, currentGame.getRoundValue(), currentGame.p1Rounds, currentGame.p2Rounds);
+                  
+                return;
             } else if(checkScoreThreshold === 2) {
-                socket.to(roomNumber).emit("score-threshold");
+                io.to(roomNumber).emit("score-threshold", p2, beforeWinningScore, t1Score, t2Score);
+                
+                currentGame.createDeck();
+                //  console.log(currentGame.deck);
+                 // console.log(`----------------------`);
+                 currentGame.shuffleDeck();
+                 currentGame.shuffleDeck();
+                 currentGame.shuffleDeck();
+                 // winner goes first..
+                 currentGame.dealTurnCard(currentGame.getDeck());
+                  currentGame.dealSpecialCard();
+                  
+                  currentGame.setPlayerOneHand([]);
+                  currentGame.setPlayerTwoHand([]);
+                  currentGame.dealPlayerOne();
+                  currentGame.dealPlayerTwo();
+                  
+                  currentGame.p1Rounds = [-1, -1, -1];
+                  currentGame.p2Rounds = [-1, -1, -1];
+                  
+                  // Cheap Trick: The event is being called twice because of two clients and 
+                  // incrementing twice.. but can have a workaround by just decreasing the value once..?
+                  
+                  // io.to(roomNumber).emit("start-game-confirmed", gameSession.deck, gameSession.playerOneHand, gameSession.playerTwoHand, gameSession.getPlayerOne(), gameSession.getPlayerTwo(), gameSession.turnCard, gameSession.specialCard, gameSession);
+                  
+                  
+                  io.to(roomNumber).emit("reset-completed", currentGame.getPlayerOneHand(), currentGame.getPlayerTwoHand(), currentGame.turnCard, currentGame.specialCard, currentGame.getTeamOneScore(), currentGame.getTeamTwoScore(), currentGame.playerTurn, currentGame.getRoundValue(), currentGame.p1Rounds, currentGame.p2Rounds);
+                  
+                return;
             }
             // NOTE: When both players play cards that result in tie for 2 rounds.. give both players +1 score
             // can ONLY use 3 clowns if you have 3 cards
@@ -496,7 +557,10 @@ const socketServer = (server) => {
             // incrementing twice.. but can have a workaround by just decreasing the value once..?
         
             // io.to(roomNumber).emit("start-game-confirmed", gameSession.deck, gameSession.playerOneHand, gameSession.playerTwoHand, gameSession.getPlayerOne(), gameSession.getPlayerTwo(), gameSession.turnCard, gameSession.specialCard, gameSession);
+           
+
             io.to(roomNumber).emit("reset-completed", currentGame.getPlayerOneHand(), currentGame.getPlayerTwoHand(), currentGame.turnCard, currentGame.specialCard, currentGame.getTeamOneScore(), currentGame.getTeamTwoScore(), currentGame.playerTurn, currentGame.getRoundValue(), currentGame.p1Rounds, currentGame.p2Rounds);
+            
            // io.emit("reset-completed", currentGame.getPlayerOneHand(), currentGame.getPlayerTwoHand(), currentGame.turnCard, currentGame.specialCard, currentGame.getTeamOneScore(), currentGame.getTeamTwoScore(), currentGame.playerTurn);
             
 
@@ -746,8 +810,10 @@ const socketServer = (server) => {
             io.to(roomNumber).emit("clowns-called", -1);
         });
 
-        socket.on("last-hand-before-winning", () => {
-
+        socket.on("last-hand-before-winning", (player, number, accepted, declined) => {
+            // this should be a TRUCO round 
+            console.log(`player in LAST HAND: ${player}`);
+            console.log("Got request for last hand");
         });
         
     });

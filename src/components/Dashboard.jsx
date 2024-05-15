@@ -92,12 +92,13 @@ const Dashboard = () => {
 
   const joinRoomClicked = () => {
     console.log(`Should have sent event to join room ${roomNumber}`);
+
     socket.emit("join-room", roomNumber, user);
 
-    socket.on("room-success", () => {
-      
-      setJoinedRoom(true);
-    });
+    console.log("after calling ??");
+
+    setJoinedRoom(true);
+
   };
 
   // when user is logged in, sends a request to database to check if user has logged in before
@@ -110,15 +111,21 @@ const Dashboard = () => {
 
     const onConnect = () => {
       setIsConnected(true);
-      socket.emit("get-users-on-table");
+      //socket.emit("get-users-on-table");
     };
 
     const onDisconnect = () => {
       setIsConnected(false);
     };
 
+ /*   const onJoinRoom = () => {
+      setJoinedRoom(true);
+    } */
+
     socket.on("connect", onConnect);
     socket.on("disconnect", onDisconnect);
+    //socket.on("room-success", onJoinRoom);
+
 
     socket.on("left-room", (userFromTable, number, userTable) => {
       console.log("This leave room should happen");
@@ -132,23 +139,7 @@ const Dashboard = () => {
 
     */
 
-    
-
-    socket.on("get-users-table", (userArr) => {
-      if(userArr.length === 0) {
-        return ;
-      }
-
-    /*  for(let i = 0; i < userArr.length; i++) {
-        const userObject = userArr[i];
-        // user was in a room, redirect them to the room
-        if(userObject.name === user) {
-          setRoomNumber(userObject.room);
-          socket.emit("join-room", userObject.room);
-          setJoinedRoom(true);
-        }
-      } */
-    });
+  
 
     const result = { username: user };
       //setInfo(result);
@@ -157,6 +148,7 @@ const Dashboard = () => {
     return () => {
       socket.off("connect", onConnect);
       socket.off("disconnect", onDisconnect);
+    //  socket.off("room-success", onJoinRoom);
       socket.off("left-room");
     };
   }, [socket]);

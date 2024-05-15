@@ -89,8 +89,16 @@
     border-right: 3px red solid;
 }
 
+.value-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    border-right: 3px red solid;
+}
+
 .special-card-container {
     display: flex;
+   
     align-content: flex-end;
     gap: 10px;
     
@@ -155,4 +163,17 @@
 
     
 
+}
+
+.option-container {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 30px;
+}
+
+.special-rank-order-container {
+    position: absolute;
+    right: 0;
+    bottom: 0;
 }
